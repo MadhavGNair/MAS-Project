@@ -30,7 +30,7 @@ class AwesomeNegotiator(SAONegotiator):
             - We use it to save a list of all rational outcomes.
 
         """
-        # If there a no outcomes (should in theory never happen)
+        # If there are no outcomes (should in theory never happen)
         if self.ufun is None:
             return
 
@@ -80,7 +80,7 @@ class AwesomeNegotiator(SAONegotiator):
     def acceptance_strategy(self, state: SAOState) -> bool:
         """
         This is one of the functions you need to implement.
-        It should determine whether or not to accept the offer.
+        It should determine whether to accept the offer.
 
         Returns: a bool.
         """
@@ -95,9 +95,9 @@ class AwesomeNegotiator(SAONegotiator):
     def bidding_strategy(self, state: SAOState) -> Outcome | None:
         """
         This is one of the functions you need to implement.
-        It should determine the counter offer.
+        It should determine the counteroffer.
 
-        Returns: The counter offer as Outcome.
+        Returns: The counteroffer as Outcome.
         """
 
         # The opponent's ufun can be accessed using self.opponent_ufun, which is not used yet.

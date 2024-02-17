@@ -16,9 +16,9 @@ import matplotlib.pyplot as plt
 import negmas.inout as io#
 from anl.anl2024.negotiators import Boulware, Conceder, RVFitter
 import pathlib
+from myagent import AwesomeNegotiator
 
 def assignA():
-
     # create negotiation agenda (issues)
     issues = [
         make_issue(name="Location", values=['Antalya', 'Barcelona', 'Milan']),
@@ -47,9 +47,7 @@ def assignA():
     A_utility = A_utility.normalize()
     B_utility = B_utility.normalize()
 
-    return (session, A_utility, B_utility)
-
-
+    return session, A_utility, B_utility
 
 def assignB():
      # Put the 'Party' folder in the same folder as this file.
@@ -62,20 +60,32 @@ def assignB():
      B_utility = B_utility.normalize()
 
      session = SAOMechanism(issues=domain.issues, n_steps=30)
-     return (session, A_utility, B_utility)
+     return session, A_utility, B_utility
 
 def visualize(negotiation_setup):
-    (session, A_utility, B_utility) = negotiation_setup
-    #to be implemented further. Add rvs.
+    session, A_utility, B_utility = negotiation_setup
+    # to be implemented further. Add rvs.
+    # adding reserved values for both agents (1(b))
 
-    #this code is already written for you.
+    A_utility.reserved_value = 0.5
+    B_utility.reserved_value = 0.2
+
+    # this code is already written for you.
     # It creates and adds two agents to the session. We create info about the two agents to share the opponent's utility.
     p_info_aboutB = create_info_about_opponentutility(B_utility)
     p_info_aboutA = create_info_about_opponentutility(A_utility)
     AgentA = AwesomeNegotiator(name="A", private_info=p_info_aboutB)
     AgentB = Boulware(name="B", private_info=p_info_aboutA)
     
-    #to be implemented further
+    # to be implemented further
+    # plots the outcome space and Pareto efficient frontier (1(a/b))
+    session.add(AgentA, ufun=A_utility)
+    session.add(AgentB, ufun=B_utility)
+
+    session.run()
+
+    session.plot(ylimits=(0.0, 1.01), show_reserved=True)
+    plt.show()
 
 
 # This piece of code is added to make the opponent utility known to the negotiator, excluding the rv.
@@ -88,6 +98,6 @@ def create_info_about_opponentutility(opp_utility):
 
 
 if __name__ == "__main__":
-    negotiation_setup = assignA()
-    #negotiation_setup = assignB()
+    # negotiation_setup = assignA()
+    negotiation_setup = assignB()
     visualize(negotiation_setup)
