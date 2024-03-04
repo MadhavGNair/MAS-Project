@@ -1,7 +1,7 @@
 """
 **Submitted to ANAC 2024 Automated Negotiation League**
-*Team* type your team name here
-*Authors* type your team member names with their emails here
+*Team* Group 1
+*Authors* Alexo Castro Yáñez, Haico Wong, Madhav Girish Nair, Ralph Dreijer, and Tiago dos Santos Silva Peixoto Carriço
 
 This code is free to use or update given that proper attribution is given to
 the authors and the ANAC 2024 ANL competition.
@@ -12,13 +12,12 @@ from negmas.outcomes import Outcome
 from negmas.sao import ResponseType, SAONegotiator, SAOResponse, SAOState
 
 
-class AwesomeNegotiator(SAONegotiator):
+class Group1(SAONegotiator):
     """
     Your agent code. This is the ONLY class you need to implement
     """
 
     rational_outcomes = tuple()
-
     partner_reserved_value = 0
 
     def on_preferences_changed(self, changes):
@@ -49,10 +48,10 @@ class AwesomeNegotiator(SAONegotiator):
 
         Args:
             state: the `SAOState` containing the offer from your partner (None if you are just starting the negotiation)
-                   and other information about the negotiation (e.g. current step, relative time, etc).
+                   and other information about the negotiation (e.g. current step, relative time, etc.).
         Returns:
             A response of type `SAOResponse` which indicates whether you accept, or reject the offer or leave the negotiation.
-            If you reject an offer, you are required to pass a counter offer.
+            If you reject an offer, you are required to pass a counteroffer.
 
         Remarks:
             - This is the ONLY function you need to implement.
@@ -64,6 +63,17 @@ class AwesomeNegotiator(SAONegotiator):
         """
         offer = state.current_offer
 
+        # Compute who gets the final bid
+        is_final_bid = True
+        if offer is None:
+            # if we start and total steps is even, they end the bid
+            if self.nmi.n_steps % 2 == 0:
+                is_final_bid = False
+        else:
+            # if opponent starts and total steps is odd, they end the bid
+            if self.nmi.n_steps % 2 != 0:
+                is_final_bid = False
+
         self.update_partner_reserved_value(state)
 
         # if there are no outcomes (should in theory never happen)
@@ -71,13 +81,15 @@ class AwesomeNegotiator(SAONegotiator):
             return SAOResponse(ResponseType.END_NEGOTIATION, None)
 
         # Determine the acceptability of the offer in the acceptance_strategy
-        if self.acceptance_strategy(state):
+        # change the concession threshold to the curve function when decided
+        concession_threshold = 0.6
+        if self.acceptance_strategy(state, concession_threshold, is_final_bid):
             return SAOResponse(ResponseType.ACCEPT_OFFER, offer)
 
-        # If it's not acceptable, determine the counter offer in the bidding_strategy
-        return SAOResponse(ResponseType.REJECT_OFFER, self.bidding_strategy(state))
+        # If it's not acceptable, determine the counteroffer in the bidding_strategy
+        return SAOResponse(ResponseType.REJECT_OFFER, self.bidding_strategy(state, concession_threshold, final_bid))
 
-    def acceptance_strategy(self, state: SAOState) -> bool:
+    def acceptance_strategy(self, state: SAOState, concession_threshold, final_bid) -> bool:
         """
         This is one of the functions you need to implement.
         It should determine whether to accept the offer.
@@ -88,11 +100,15 @@ class AwesomeNegotiator(SAONegotiator):
 
         offer = state.current_offer
 
-        if self.ufun(offer) > (2 * self.ufun.reserved_value):
+        print("Current offer = ", offer, ", value = ", self.ufun(offer))
+
+        # if the offer is valid, not worse than our reservation value, and larger than or equal to
+        # our concession threshold, accept bid, else reject
+        if offer is not None and float(self.ufun(offer)) > self.ufun.reserved_value and float(self.ufun(offer) >= concession_threshold):
             return True
         return False
 
-    def bidding_strategy(self, state: SAOState) -> Outcome | None:
+    def bidding_strategy(self, state: SAOState, concession_threshold, final_bid) -> Outcome | None:
         """
         This is one of the functions you need to implement.
         It should determine the counteroffer.

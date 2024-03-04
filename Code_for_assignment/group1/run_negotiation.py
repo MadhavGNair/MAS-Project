@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import negmas.inout as io#
 from anl.anl2024.negotiators import Boulware, Conceder, RVFitter
 import pathlib
-from myagent import AwesomeNegotiator
+from group1 import Group1
 
 def assignA():
     # create negotiation agenda (issues)
@@ -74,7 +74,7 @@ def visualize(negotiation_setup):
     # It creates and adds two agents to the session. We create info about the two agents to share the opponent's utility.
     p_info_aboutB = create_info_about_opponentutility(B_utility)
     p_info_aboutA = create_info_about_opponentutility(A_utility)
-    AgentA = AwesomeNegotiator(name="A", private_info=p_info_aboutB)
+    AgentA = Group1(name="A", private_info=p_info_aboutB)
     AgentB = Boulware(name="B", private_info=p_info_aboutA)
     
     # to be implemented further
@@ -83,7 +83,7 @@ def visualize(negotiation_setup):
     session.add(AgentB, ufun=B_utility)
 
     session.run()
-
+    # print(session.pareto_frontier([A_utility, B_utility]))
     session.plot(ylimits=(0.0, 1.01), show_reserved=True)
     plt.show()
 
