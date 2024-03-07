@@ -33,6 +33,7 @@ class Group1(SAONegotiator):
         if self.ufun is None:
             return
 
+        # this stores all the possible outcomes (so filtering required)
         self.rational_outcomes = [
             _
             for _ in self.nmi.outcome_space.enumerate_or_sample()  # enumerates outcome space when finite, samples when infinite
@@ -41,6 +42,8 @@ class Group1(SAONegotiator):
 
         # Estimate the reservation value, as a first guess, the opponent has the same reserved_value as you
         self.partner_reserved_value = self.ufun.reserved_value
+
+        # Initialize the utilities
 
     def __call__(self, state: SAOState) -> SAOResponse:
         """
@@ -59,7 +62,7 @@ class Group1(SAONegotiator):
             - You can access the opponent's ufun using self.opponent_ufun(offer)
             - You can access the mechanism for helpful functions like sampling from the outcome space using `self.nmi` (returns an `SAONMI` instance).
             - You can access the current offer (from your partner) as `state.current_offer`.
-              - If this is `None`, you are starting the negotiation now (no offers yet).
+            - If this is `None`, you are starting the negotiation now (no offers yet).
         """
         offer = state.current_offer
 
