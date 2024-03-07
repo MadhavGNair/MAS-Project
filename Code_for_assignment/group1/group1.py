@@ -74,6 +74,9 @@ class Group1(SAONegotiator):
             if self.nmi.n_steps % 2 != 0:
                 is_final_bid = False
 
+        # Compute the current phase (first or second half of negotiation)
+        current_phase = 1 if state.step <= int(self.nmi.n_steps/2) else 2
+
         self.update_partner_reserved_value(state)
 
         # if there are no outcomes (should in theory never happen)
@@ -83,16 +86,24 @@ class Group1(SAONegotiator):
         # Determine the acceptability of the offer in the acceptance_strategy
         # change the concession threshold to the curve function when decided
         concession_threshold = 0.6
-        if self.acceptance_strategy(state, concession_threshold, is_final_bid):
+        if self.acceptance_strategy(state, concession_threshold, is_final_bid, current_phase):
             return SAOResponse(ResponseType.ACCEPT_OFFER, offer)
 
         # If it's not acceptable, determine the counteroffer in the bidding_strategy
-        return SAOResponse(ResponseType.REJECT_OFFER, self.bidding_strategy(state, concession_threshold, final_bid))
+        return SAOResponse(ResponseType.REJECT_OFFER,
+                           self.bidding_strategy(state, concession_threshold, is_final_bid, current_phase))
 
-    def acceptance_strategy(self, state: SAOState, concession_threshold, final_bid) -> bool:
+    def acceptance_strategy(self, state: SAOState, concession_threshold, final_bid, phase) -> bool:
         """
         This is one of the functions you need to implement.
         It should determine whether to accept the offer.
+
+        Args:
+            state (SAOState): the `SAOState` containing the offer from your partner (None if you are just starting the negotiation)
+                   and other information about the negotiation (e.g. current step, relative time, etc.).
+            concession_threshold: the threshold above or equal to which our agent will accept the offer
+            final_bid: boolean indicating whether our agent has the final bid or not (True if we do, else False)
+            phase: integer indicating the current phase of negotiation (1 for first half, 2 for second half)
 
         Returns: a bool.
         """
@@ -108,15 +119,30 @@ class Group1(SAONegotiator):
             return True
         return False
 
-    def bidding_strategy(self, state: SAOState, concession_threshold, final_bid) -> Outcome | None:
+    def bidding_strategy(self, state: SAOState, concession_threshold, final_bid, phase) -> Outcome | None:
         """
         This is one of the functions you need to implement.
         It should determine the counteroffer.
+
+        Args:
+            state (SAOState): the `SAOState` containing the offer from your partner (None if you are just starting the negotiation)
+                   and other information about the negotiation (e.g. current step, relative time, etc.).
+            concession_threshold: the threshold above or equal to which our agent will accept the offer
+            final_bid: boolean indicating whether our agent has the final bid or not (True if we do, else False)
+            phase: integer indicating the current phase of negotiation (1 for first half, 2 for second half)
 
         Returns: The counteroffer as Outcome.
         """
 
         # The opponent's ufun can be accessed using self.opponent_ufun, which is not used yet.
+        # BASIC IDEA:
+        # IF WE DO NOT HAVE LAST BID:
+        # If in first phase, filter out offers above estimated opponents reservation value, Nash point, along the Pareto
+        # front and sort them in descending order. Keep bidding in order and recycle when end of list is reached. Also,
+        # store the bids offered by the opponent (above reservation) and sort them in descending order of our utility.
+        # If in second phase, recycle the list of stored bids from the opponent.
+        # IF WE HAVE LAST BID:
+        # Same strategy as first phase of ^.  
 
         return random.choice(self.rational_outcomes)
 
@@ -146,4 +172,4 @@ class Group1(SAONegotiator):
 if __name__ == "__main__":
     from .helpers.runner import run_a_tournament
 
-    run_a_tournament(AwesomeNegotiator, small=True)
+    run_a_tournament(Group1, small=True)
