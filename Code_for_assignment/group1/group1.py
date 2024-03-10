@@ -10,6 +10,7 @@ import random
 
 from negmas.outcomes import Outcome
 from negmas.sao import ResponseType, SAONegotiator, SAOResponse, SAOState
+from negmas.preferences import pareto_frontier
 
 
 class Group1(SAONegotiator):
@@ -19,6 +20,8 @@ class Group1(SAONegotiator):
 
     rational_outcomes = tuple()
     partner_reserved_value = 0
+    pareto_outcomes = list()
+    pareto_indices = list()
 
     def on_preferences_changed(self, changes):
         """
@@ -43,7 +46,24 @@ class Group1(SAONegotiator):
         # Estimate the reservation value, as a first guess, the opponent has the same reserved_value as you
         self.partner_reserved_value = self.ufun.reserved_value
 
-        # Initialize the utilities
+        # from rational_outcomes, select pareto optimal outcomes using the multi-layer pareto strategy
+        # the strategy is to set a threshold of pseudo-pareto outcomes. If the initial layer does not have
+        # threshold amount of outcomes, removes that layer and calculate the next best pareto outcomes,
+        # (hence pseudo), until the threshold is reached. Set threshold to 0 to get first frontier.
+        # ISSUE: WHAT IF PARETO COUNT EXCEEDS THE TOTAL NUMBER OF BIDS?
+        pareto_count = 5
+        self.pareto_outcomes = list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[0])
+        self.pareto_indices = list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[1])
+        # sort indices in descending order to avoid shrinking array issue
+        self.pareto_indices = sorted(self.pareto_indices, reverse=True)
+        while len(self.pareto_outcomes) < pareto_count:
+            # remove the pareto outcomes from rational outcomes
+            for p_idx in self.pareto_indices:
+                del self.rational_outcomes[p_idx]
+            # recompute new pareto layer
+            self.pareto_outcomes.extend(list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[0]))
+            self.pareto_indices.extend(list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[1]))
+
 
     def __call__(self, state: SAOState) -> SAOResponse:
         """
@@ -114,7 +134,7 @@ class Group1(SAONegotiator):
 
         offer = state.current_offer
 
-        print("Current offer = ", offer, ", value = ", self.ufun(offer))
+        # print("Current offer = ", offer, ", value = ", self.ufun(offer))
 
         # if the offer is valid, not worse than our reservation value, and larger than or equal to
         # our concession threshold, accept bid, else reject
