@@ -10,7 +10,7 @@ import random
 
 from negmas.outcomes import Outcome
 from negmas.sao import ResponseType, SAONegotiator, SAOResponse, SAOState
-from negmas.preferences import pareto_frontier
+from negmas.preferences import pareto_frontier, nash_points
 
 
 class Group1(SAONegotiator):
@@ -22,6 +22,7 @@ class Group1(SAONegotiator):
     partner_reserved_value = 0
     pareto_outcomes = list()
     pareto_indices = list()
+    nash_outcomes = list()
 
     def on_preferences_changed(self, changes):
         """
@@ -42,6 +43,8 @@ class Group1(SAONegotiator):
             for _ in self.nmi.outcome_space.enumerate_or_sample()  # enumerates outcome space when finite, samples when infinite
             if self.ufun(_) > self.ufun.reserved_value
         ]
+
+        rational_outcomes_copy = self.rational_outcomes.copy()
 
         # Estimate the reservation value, as a first guess, the opponent has the same reserved_value as you
         self.partner_reserved_value = self.ufun.reserved_value
@@ -66,6 +69,12 @@ class Group1(SAONegotiator):
             self.pareto_indices.extend(
                 list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[1]))
 
+        # calculate and store the Nash points
+        # ISSUE: WORKS FINE FOR ASSIGNMENT A, BUT NOT B, B SHOWS KALAI INSTEAD OF NASH POINT
+        # POSSIBLE PROBLEM MIGHT BE RESERVATION VALUES NOT BEING TAKEN INTO ACCOUNT
+        self.nash_outcomes = nash_points([self.ufun, self.opponent_ufun],
+                                         pareto_frontier([self.ufun, self.opponent_ufun], rational_outcomes_copy)[0])[0][0]
+
     def __call__(self, state: SAOState) -> SAOResponse:
         """
         Called to (counter-)offer.
@@ -87,7 +96,7 @@ class Group1(SAONegotiator):
         """
         offer = state.current_offer
 
-        # Compute who gets the final bid
+        # compute who gets the final bid (True = we end, False = opponent ends)
         is_final_bid = True
         if offer is None:
             # if we start and total steps is even, they end the bid
@@ -98,7 +107,7 @@ class Group1(SAONegotiator):
             if self.nmi.n_steps % 2 != 0:
                 is_final_bid = False
 
-        # Compute the current phase (first or second half of negotiation)
+        # compute the current phase (first or second half of negotiation)
         current_phase = 1 if state.step <= int(self.nmi.n_steps/2) else 2
 
         self.update_partner_reserved_value(state)
@@ -134,13 +143,23 @@ class Group1(SAONegotiator):
         assert self.ufun
 
         offer = state.current_offer
+        offer_utility = float(self.ufun(offer))
 
-        print("Current offer = ", offer, ", value = ", self.ufun(offer))
+        # define the pseudo-reservation value
+        delta_reserve = 0
+        pseudo_reserve = self.ufun.reserved_value + delta_reserve
 
-        # if the offer is valid, not worse than our reservation value, and larger than or equal to
-        # our concession threshold, accept bid, else reject
-        if offer is not None and float(self.ufun(offer)) > self.ufun.reserved_value and float(self.ufun(offer) >= concession_threshold):
-            return True
+        # TO DO: IMPLEMENT PHASE CHANGE
+        # define two strategies for when opponent has and does not have last bid
+        if final_bid:
+            # if offer is above or equal to Nash point, our reservation value and our concession threshold, accept
+            if offer is not None and offer_utility > pseudo_reserve and offer_utility >= self.nash_outcomes[0]\
+                    and offer_utility >= concession_threshold:
+                return True
+        else:
+            # since we are at disadvantage, simply accept valid offers above reservation value and concession threshold
+            if offer is not None and offer_utility > pseudo_reserve and offer_utility >= concession_threshold:
+                return True
         return False
 
     def bidding_strategy(self, state: SAOState, concession_threshold, final_bid, phase) -> Outcome | None:
