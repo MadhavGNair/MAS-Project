@@ -10,7 +10,7 @@ import random
 
 from negmas.outcomes import Outcome
 from negmas.sao import ResponseType, SAONegotiator, SAOResponse, SAOState
-from negmas.preferences import pareto_frontier
+from negmas.preferences import pareto_frontier, nash_points
 
 
 class Group1(SAONegotiator):
@@ -22,6 +22,7 @@ class Group1(SAONegotiator):
     partner_reserved_value = 0
     pareto_outcomes = list()
     pareto_indices = list()
+    nash_outcomes = list()
 
     def on_preferences_changed(self, changes):
         """
@@ -43,6 +44,8 @@ class Group1(SAONegotiator):
             if self.ufun(_) > self.ufun.reserved_value
         ]
 
+        rational_outcomes_copy = self.rational_outcomes.copy()
+
         # Estimate the reservation value, as a first guess, the opponent has the same reserved_value as you
         self.partner_reserved_value = self.ufun.reserved_value
 
@@ -63,6 +66,13 @@ class Group1(SAONegotiator):
             # recompute new pareto layer
             self.pareto_outcomes.extend(list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[0]))
             self.pareto_indices.extend(list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[1]))
+
+        # calculate and store the Nash points
+        # ISSUE: WORKS FINE FOR ASSIGNMENT A, BUT NOT B, B SHOWS KALAI INSTEAD OF NASH POINT
+        # POSSIBLE PROBLEM MIGHT BE RESERVATION VALUES NOT BEING TAKEN INTO ACCOUNT
+        self.nash_outcomes = nash_points([self.ufun, self.opponent_ufun],
+                                         pareto_frontier([self.ufun, self.opponent_ufun], rational_outcomes_copy)[
+                                             0])[0][0]
 
 
     def __call__(self, state: SAOState) -> SAOResponse:
