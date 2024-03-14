@@ -20,7 +20,7 @@ class Group1(SAONegotiator):
 
     rational_outcomes = tuple()
     partner_reserved_value = 0
-    pareto_outcomes = list()
+    pareto_utilities = list()
     pareto_indices = list()
     nash_outcomes = list()
 
@@ -57,16 +57,16 @@ class Group1(SAONegotiator):
         # (hence pseudo), until the threshold is reached. Set threshold to 0 to get first frontier.
         # ISSUE: WHAT IF PARETO COUNT EXCEEDS THE TOTAL NUMBER OF BIDS?
         pareto_count = 5
-        self.pareto_outcomes = list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[0])
+        self.pareto_utilities = list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[0])
         self.pareto_indices = list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[1])
         # sort indices in descending order to avoid shrinking array issue
         self.pareto_indices = sorted(self.pareto_indices, reverse=True)
-        while len(self.pareto_outcomes) < pareto_count:
+        while len(self.pareto_utilities) < pareto_count:
             # remove the pareto outcomes from rational outcomes
             for p_idx in self.pareto_indices:
                 del self.rational_outcomes[p_idx]
             # recompute new pareto layer
-            self.pareto_outcomes.extend(
+            self.pareto_utilities.extend(
                 list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[0]))
             self.pareto_indices.extend(
                 list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[1]))
@@ -109,8 +109,8 @@ class Group1(SAONegotiator):
             if self.nmi.n_steps % 2 != 0:
                 is_final_bid = False
 
-        # compute the current phase (first or second half of negotiation)
-        current_phase = 1 if state.step <= int(self.nmi.n_steps/2) else 2
+        # compute the current phase of negotiation
+        current_phase = self.compute_phase(state)
 
         self.update_partner_reserved_value(state)
 
@@ -191,7 +191,11 @@ class Group1(SAONegotiator):
         """This is one of the functions you can implement.
         Using the information of the new offers, you can update the estimated reservation value of the opponent.
 
-        returns: None.
+        Args:
+            state (SAOState): the `SAOState` containing the offer from your partner (None if you are just starting the negotiation)
+                   and other information about the negotiation (e.g. current step, relative time, etc.).
+
+        Returns: None.
         """
         assert self.ufun and self.opponent_ufun
 
@@ -208,9 +212,27 @@ class Group1(SAONegotiator):
             if self.opponent_ufun(_) > self.partner_reserved_value
         ]
 
+    def compute_phase(self, state: SAOState) -> int:
+        """
+        Function to compute the current phase of negotiation. First half is Phase 1, the next 1/4th is Phase 2, and
+        the remaining steps is Phase 3.
+        Args:
+            state (SAOState): the `SAOState` containing the offer from your partner (None if you are just starting the negotiation)
+                   and other information about the negotiation (e.g. current step, relative time, etc.).
+
+        Returns:
+            The phase as an Integer.
+        """
+        if state.step <= (self.nmi.n_steps // 2):
+            return 1
+        elif state.step <= ((3 * self.nmi.n_steps) // 4):
+            return 2
+        else:
+            return 3
+
 
 # if you want to do a very small test, use the parameter small=True here. Otherwise, you can use the default parameters.
 if __name__ == "__main__":
-    from .helpers.runner import run_a_tournament
+    from helpers.runner import run_a_tournament
 
     run_a_tournament(Group1, small=True)
