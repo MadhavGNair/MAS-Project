@@ -238,7 +238,11 @@ class Group1(SAONegotiator):
             state (SAOState): the `SAOState` containing the offer from your partner (None if you are just starting the negotiation)
                    and other information about the negotiation (e.g. current step, relative time, etc.).
         """
+        # The concession threshold aims for the maximum reservation value between the two agents
+        # This allows us to "follow" the opponent's strategy, but only in the case that 
+        # (our prediction of) their reservation value is higher than ours
         concession_threshold = max(self.ufun.reserved_value, self.partner_reserved_value)
+
         beta = 1 # TODO - add phases for beta value based on time
 
         return 1 - ((concession_threshold - 1) * (state.step / self.nmi.n_steps)**beta)
