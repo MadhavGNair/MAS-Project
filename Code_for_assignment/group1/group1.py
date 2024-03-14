@@ -44,6 +44,8 @@ class Group1(SAONegotiator):
             if self.ufun(_) > self.ufun.reserved_value
         ]
 
+        print(self.rational_outcomes)
+
         rational_outcomes_copy = self.rational_outcomes.copy()
 
         # Estimate the reservation value, as a first guess, the opponent has the same reserved_value as you
@@ -145,20 +147,16 @@ class Group1(SAONegotiator):
         offer = state.current_offer
         offer_utility = float(self.ufun(offer))
 
-        # define the pseudo-reservation value
-        delta_reserve = 0
-        pseudo_reserve = self.ufun.reserved_value + delta_reserve
-
         # TO DO: IMPLEMENT PHASE CHANGE
         # define two strategies for when opponent has and does not have last bid
         if final_bid:
             # if offer is above or equal to Nash point, our reservation value and our concession threshold, accept
-            if offer is not None and offer_utility > pseudo_reserve and offer_utility >= self.nash_outcomes[0]\
+            if offer is not None and offer_utility >= self.nash_outcomes[0]\
                     and offer_utility >= concession_threshold:
                 return True
         else:
             # since we are at disadvantage, simply accept valid offers above reservation value and concession threshold
-            if offer is not None and offer_utility > pseudo_reserve and offer_utility >= concession_threshold:
+            if offer is not None and offer_utility >= concession_threshold:
                 return True
         return False
 
