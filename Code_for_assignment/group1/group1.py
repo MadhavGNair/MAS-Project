@@ -145,16 +145,15 @@ class Group1(SAONegotiator):
         offer = state.current_offer
         offer_utility = float(self.ufun(offer))
 
-        # TO DO: IMPLEMENT PHASE CHANGE
         # define two strategies for when opponent has and does not have last bid
         if final_bid:
             # if offer is above or equal to Nash point, our reservation value and our concession threshold, accept
             if offer is not None and offer_utility >= self.nash_outcomes[0]\
-                    and offer_utility >= concession_threshold:
+                    and offer_utility >= self.ufun.reserved_value and offer_utility >= concession_threshold:
                 return True
         else:
             # since we are at disadvantage, simply accept valid offers above reservation value and concession threshold
-            if offer is not None and offer_utility >= concession_threshold:
+            if offer is not None and offer_utility >= self.ufun.reserved_value and offer_utility >= concession_threshold:
                 return True
         return False
 
