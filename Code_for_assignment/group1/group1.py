@@ -44,8 +44,6 @@ class Group1(SAONegotiator):
             if self.ufun(_) > self.ufun.reserved_value
         ]
 
-        print(self.rational_outcomes)
-
         rational_outcomes_copy = self.rational_outcomes.copy()
 
         # Estimate the reservation value, as a first guess, the opponent has the same reserved_value as you
