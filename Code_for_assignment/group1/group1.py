@@ -228,9 +228,9 @@ class Group1(SAONegotiator):
         """
         beta = 1 # TODO - add phases for beta value based on time
 
-        return 1 - ((self.ufun.reserved_value - 1) * (state.step / self.nmi.n_steps)**beta)
+        return 1 - ((1 - self.ufun.reserved_value) * (state.step / self.nmi.n_steps)**beta)
     
-    def bidding_curve(self, state: SAOState):
+    def bidding_curve(self, state: SAOState, final_bid):
         """
         This function determines the bidding curve point at the current time step.
 
@@ -238,14 +238,17 @@ class Group1(SAONegotiator):
             state (SAOState): the `SAOState` containing the offer from your partner (None if you are just starting the negotiation)
                    and other information about the negotiation (e.g. current step, relative time, etc.).
         """
-        # The concession threshold aims for the maximum reservation value between the two agents
-        # This allows us to "follow" the opponent's strategy, but only in the case that 
-        # (our prediction of) their reservation value is higher than ours
-        concession_threshold = max(self.ufun.reserved_value, self.partner_reserved_value)
+        if final_bid:
+            concession_threshold = self.ufun.reserved_value
+        else:
+            # The concession threshold aims for the maximum reservation value between the two agents
+            # This allows us to "follow" the opponent's strategy, but only in the case that 
+            # (our prediction of) their reservation value is higher than ours
+            concession_threshold = max(self.ufun.reserved_value, self.partner_reserved_value)
 
         beta = 1 # TODO - add phases for beta value based on time
 
-        return 1 - ((concession_threshold - 1) * (state.step / self.nmi.n_steps)**beta)
+        return 1 - ((1 - concession_threshold) * (state.step / self.nmi.n_steps)**beta)
     
     def compute_phase(self, state: SAOState) -> int:
         """
