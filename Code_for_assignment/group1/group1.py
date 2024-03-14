@@ -78,7 +78,7 @@ class Group1(SAONegotiator):
                 is_final_bid = False
 
         # Compute the current phase (first or second half of negotiation)
-        current_phase = 1 if state.step <= int(self.nmi.n_steps/2) else 2
+        current_phase = 1 if state.step <= int(self.nmi.n_steps / 2) else 2
 
         self.update_partner_reserved_value(state)
 
@@ -89,14 +89,22 @@ class Group1(SAONegotiator):
         # Determine the acceptability of the offer in the acceptance_strategy
         # change the concession threshold to the curve function when decided
         concession_threshold = 0.6
-        if self.acceptance_strategy(state, concession_threshold, is_final_bid, current_phase):
+        if self.acceptance_strategy(
+            state, concession_threshold, is_final_bid, current_phase
+        ):
             return SAOResponse(ResponseType.ACCEPT_OFFER, offer)
 
         # If it's not acceptable, determine the counteroffer in the bidding_strategy
-        return SAOResponse(ResponseType.REJECT_OFFER,
-                           self.bidding_strategy(state, concession_threshold, is_final_bid, current_phase))
+        return SAOResponse(
+            ResponseType.REJECT_OFFER,
+            self.bidding_strategy(
+                state, concession_threshold, is_final_bid, current_phase
+            ),
+        )
 
-    def acceptance_strategy(self, state: SAOState, concession_threshold, final_bid, phase) -> bool:
+    def acceptance_strategy(
+        self, state: SAOState, concession_threshold, final_bid, phase
+    ) -> bool:
         """
         This is one of the functions you need to implement.
         It should determine whether to accept the offer.
@@ -118,11 +126,17 @@ class Group1(SAONegotiator):
 
         # if the offer is valid, not worse than our reservation value, and larger than or equal to
         # our concession threshold, accept bid, else reject
-        if offer is not None and float(self.ufun(offer)) > self.ufun.reserved_value and float(self.ufun(offer) >= concession_threshold):
+        if (
+            offer is not None
+            and float(self.ufun(offer)) > self.ufun.reserved_value
+            and float(self.ufun(offer) >= concession_threshold)
+        ):
             return True
         return False
 
-    def bidding_strategy(self, state: SAOState, concession_threshold, final_bid, phase) -> Outcome | None:
+    def bidding_strategy(
+        self, state: SAOState, concession_threshold, final_bid, phase
+    ) -> Outcome | None:
         """
         This is one of the functions you need to implement.
         It should determine the counteroffer.
@@ -140,12 +154,19 @@ class Group1(SAONegotiator):
         # The opponent's ufun can be accessed using self.opponent_ufun, which is not used yet.
         # BASIC IDEA:
         # IF WE DO NOT HAVE LAST BID:
-        # If in first phase, filter out offers above estimated opponents reservation value, Nash point, along the Pareto
-        # front and sort them in descending order. Keep bidding in order and recycle when end of list is reached. Also,
-        # store the bids offered by the opponent (above reservation) and sort them in descending order of our utility.
-        # If in second phase, recycle the list of stored bids from the opponent.
+        # - If in first phase, filter out offers above estimated opponents reservation value, Nash point, along the Pareto
+        #   front and sort them in descending order. Keep bidding in order and recycle when end of list is reached. Also,
+        #   store the bids offered by the opponent (above reservation) and sort them in descending order of our utility.
+        # - If in second phase, recycle the list of stored bids from the opponent.
         # IF WE HAVE LAST BID:
-        # Same strategy as first phase of ^.  
+        # Same strategy as first phase of ^.
+
+        if final_bid or phase == 1:
+            # We have the last bid or are in the first phase
+            pass
+        else:
+            # We do not have the last bid and are in the second phase
+            pass
 
         return random.choice(self.rational_outcomes)
 
@@ -173,6 +194,6 @@ class Group1(SAONegotiator):
 
 # if you want to do a very small test, use the parameter small=True here. Otherwise, you can use the default parameters.
 if __name__ == "__main__":
-    from .helpers.runner import run_a_tournament
+    from helpers.runner import run_a_tournament
 
     run_a_tournament(Group1, small=True)
