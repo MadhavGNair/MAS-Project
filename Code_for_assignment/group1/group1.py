@@ -80,7 +80,6 @@ class Group1(SAONegotiator):
         # sometimes the actual Nash is not returned since it depends on estimate of opponent's reservation value
         self.nash_outcomes = nash_points([self.ufun, self.opponent_ufun],
                                          pareto_frontier([self.ufun, self.opponent_ufun], rational_outcomes_copy)[0])[0][0]
-        print(self.nash_outcomes)
 
     def __call__(self, state: SAOState) -> SAOResponse:
         """
@@ -184,13 +183,15 @@ class Group1(SAONegotiator):
             possible_bids = [bids[1] for bids in self.pareto_outcomes if bids[0][0] >= self.nash_outcomes[0] and
                              bids[0][0] > self.ufun.reserved_value and bids[0][1] > self.partner_reserved_value and
                              bids[0][0] > concession_threshold]
-            return random.choice(possible_bids)
         else:
             # if opponent has last bid, WHAT TO DO?
             possible_bids = [bids[1] for bids in self.pareto_outcomes if bids[0][0] >= self.nash_outcomes[0] and
                              bids[0][0] > self.ufun.reserved_value and bids[0][1] > self.partner_reserved_value and
                              bids[0][0] > concession_threshold]
-            return random.choice(possible_bids)
+        # ISSUE: FOR SOME REASON POSSIBLE BIDS CAN BE EMPTY, SO ADDED A CHECKER, POSSIBLY MODIFY THIS
+        if len(possible_bids) > 0:
+            return random.choice(self.rational_outcomes)
+        return self.rational_outcomes[random.choice(possible_bids)]
 
     def update_partner_reserved_value(self, state: SAOState) -> None:
         """This is one of the functions you can implement.
