@@ -218,7 +218,7 @@ class Group1(SAONegotiator):
             if self.opponent_ufun(_) > self.partner_reserved_value
         ]
     
-    def acceptance_curve(self, state: SAOState):
+    def acceptance_curve(self, state: SAOState, current_phase):
         """
         This function determines the acceptance curve point at the current time step.
 
@@ -226,11 +226,16 @@ class Group1(SAONegotiator):
             state (SAOState): the `SAOState` containing the offer from your partner (None if you are just starting the negotiation)
                    and other information about the negotiation (e.g. current step, relative time, etc.).
         """
-        beta = 1 # TODO - add phases for beta value based on time
+        if current_phase == 1:
+            beta = 0.5
+        elif current_phase == 2:
+            beta = 1
+        else:
+            beta = 1.5
 
-        return 1 - ((1 - self.ufun.reserved_value) * (state.step / self.nmi.n_steps)**beta)
+        return 1 - ((1 - self.ufun.reserved_value) * (state.step / self.nmi.n_steps)**(1 / beta))
     
-    def bidding_curve(self, state: SAOState, final_bid):
+    def bidding_curve(self, state: SAOState, final_bid, current_phase):
         """
         This function determines the bidding curve point at the current time step.
 
@@ -246,9 +251,14 @@ class Group1(SAONegotiator):
             # (our prediction of) their reservation value is higher than ours
             concession_threshold = max(self.ufun.reserved_value, self.partner_reserved_value)
 
-        beta = 1 # TODO - add phases for beta value based on time
+        if current_phase == 1:
+            beta = 0.5
+        elif current_phase == 2:
+            beta = 1
+        else:
+            beta = 1.5
 
-        return 1 - ((1 - concession_threshold) * (state.step / self.nmi.n_steps)**beta)
+        return 1 - ((1 - concession_threshold) * (state.step / self.nmi.n_steps)**(1 / beta))
     
     def compute_phase(self, state: SAOState) -> int:
         """
