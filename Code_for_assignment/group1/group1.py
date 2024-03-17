@@ -26,6 +26,8 @@ class Group1(SAONegotiator):
     pareto_indices = list()
     nash_outcomes = list()
     is_final_bid = bool
+    acceptance_concession_phase = {1: (1, 0), 2: (1, 0), 3: (1, 0)}
+    bidding_concession_phase    = {1: (1, 0), 2: (1, 0), 3: (1, 0)}
 
     def on_preferences_changed(self, changes):
         """
@@ -226,14 +228,25 @@ class Group1(SAONegotiator):
             state (SAOState): the `SAOState` containing the offer from your partner (None if you are just starting the negotiation)
                    and other information about the negotiation (e.g. current step, relative time, etc.).
         """
+        m = self.ufun.reserved_value
         if current_phase == 1:
+            x = state.step
+            T = self.nmi.n_steps
+            M = 1
             beta = 0.5
-        elif current_phase == 2:
-            beta = 1
         else:
-            beta = 1.5
+            x = state.step - self.acceptance_concession_phase[current_phase - 1][1]
+            T = self.nmi.n_steps - self.acceptance_concession_phase[current_phase - 1][1]
+            M = self.acceptance_concession_phase[current_phase - 1][0]
 
-        return 1 - ((1 - self.ufun.reserved_value) * (state.step / self.nmi.n_steps)**(1 / beta))
+            if current_phase == 2:
+                beta = 1
+            else:
+                beta = 1.5
+
+        self.acceptance_concession_phase[current_phase] = (M - ((M - m) * (x / T)**(1 / beta)), state.step)
+
+        return self.acceptance_concession_phase[current_phase][0]
     
     def bidding_curve(self, state: SAOState, final_bid, current_phase):
         """
@@ -244,21 +257,31 @@ class Group1(SAONegotiator):
                    and other information about the negotiation (e.g. current step, relative time, etc.).
         """
         if final_bid:
-            concession_threshold = self.ufun.reserved_value
+            m = self.ufun.reserved_value
         else:
             # The concession threshold aims for the maximum reservation value between the two agents
             # This allows us to "follow" the opponent's strategy, but only in the case that 
             # (our prediction of) their reservation value is higher than ours
-            concession_threshold = max(self.ufun.reserved_value, self.partner_reserved_value)
-
+            m = max(self.ufun.reserved_value, self.partner_reserved_value)
+        
         if current_phase == 1:
+            x = state.step
+            T = self.nmi.n_steps
+            M = 1
             beta = 0.5
-        elif current_phase == 2:
-            beta = 1
         else:
-            beta = 1.5
+            x = state.step - self.bidding_concession_phase[current_phase - 1][1]
+            T = self.nmi.n_steps - self.bidding_concession_phase[current_phase - 1][1]
+            M = self.bidding_concession_phase[current_phase - 1][0]
 
-        return 1 - ((1 - concession_threshold) * (state.step / self.nmi.n_steps)**(1 / beta))
+            if current_phase == 2:
+                beta = 1
+            else:
+                beta = 1.5
+
+        self.bidding_concession_phase[current_phase] = (M - ((M - m) * (x / T)**(1 / beta)), state.step)
+
+        return self.bidding_concession_phase[current_phase][0]
     
     def compute_phase(self, state: SAOState) -> int:
         """
