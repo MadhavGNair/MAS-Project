@@ -20,9 +20,10 @@ class Group1(SAONegotiator):
 
     rational_outcomes = tuple()
     partner_reserved_value = 0
-    pareto_outcomes = list()
+    pareto_utilities = list()
     pareto_indices = list()
     nash_outcomes = list()
+    NR_DETECTING_CELLS = 20
 
     def on_preferences_changed(self, changes):
         """
@@ -46,25 +47,22 @@ class Group1(SAONegotiator):
 
         rational_outcomes_copy = self.rational_outcomes.copy()
 
-        # Estimate the reservation value, as a first guess, the opponent has the same reserved_value as you
-        self.partner_reserved_value = self.ufun.reserved_value
-
         # from rational_outcomes, select pareto optimal outcomes using the multi-layer pareto strategy
         # the strategy is to set a threshold of pseudo-pareto outcomes. If the initial layer does not have
         # threshold amount of outcomes, removes that layer and calculate the next best pareto outcomes,
         # (hence pseudo), until the threshold is reached. Set threshold to 0 to get first frontier.
         # ISSUE: WHAT IF PARETO COUNT EXCEEDS THE TOTAL NUMBER OF BIDS?
         pareto_count = 5
-        self.pareto_outcomes = list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[0])
+        self.pareto_utilities = list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[0])
         self.pareto_indices = list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[1])
         # sort indices in descending order to avoid shrinking array issue
         self.pareto_indices = sorted(self.pareto_indices, reverse=True)
-        while len(self.pareto_outcomes) < pareto_count:
+        while len(self.pareto_utilities) < pareto_count:
             # remove the pareto outcomes from rational outcomes
             for p_idx in self.pareto_indices:
                 del self.rational_outcomes[p_idx]
             # recompute new pareto layer
-            self.pareto_outcomes.extend(list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[0]))
+            self.pareto_utilities.extend(list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[0]))
             self.pareto_indices.extend(list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[1]))
 
         # calculate and store the Nash points
@@ -73,6 +71,29 @@ class Group1(SAONegotiator):
         self.nash_outcomes = nash_points([self.ufun, self.opponent_ufun],
                                          pareto_frontier([self.ufun, self.opponent_ufun], rational_outcomes_copy)[
                                              0])[0][0]
+
+
+        ### OPPONENT MODELLING INITIALIZATION ###
+
+        # Detecting region: First bounds of opponent's reservation value          
+        for utilities in sorted(self.pareto_utilities, key= lambda x: x[0]):
+            if utilities[0]>self.ufun.reserved_value:
+                self.opponent_rv_upper_bound = utilities[1]
+                break 
+        self.opponent_rv_lower_bound = sorted(self.pareto_utilities, key= lambda x: x[1])[0][1]
+
+        # Dividing the detecting region into detecting cells
+        detecting_region_lenght = self.opponent_rv_upper_bound - self.opponent_rv_lower_bound
+        self.detecting_cells_bounds = list()
+        for k in range(self.NR_DETECTING_CELLS+1):
+            self.detecting_cells_bounds.append(self.opponent_rv_lower_bound+(k/self.NR_DETECTING_CELLS)*detecting_region_lenght)
+
+        # Uniform distribution in the detecting cells
+        self.detecting_cells_prob = [1/self.NR_DETECTING_CELLS] * self.NR_DETECTING_CELLS
+
+        # First guess (if needed)
+        self.partner_reserved_value = self.opponent_rv_upper_bound
+
 
 
     def __call__(self, state: SAOState) -> SAOResponse:
@@ -203,6 +224,6 @@ class Group1(SAONegotiator):
 
 # if you want to do a very small test, use the parameter small=True here. Otherwise, you can use the default parameters.
 if __name__ == "__main__":
-    from .helpers.runner import run_a_tournament
+    from helpers.runner import run_a_tournament
 
     run_a_tournament(Group1, small=True)
