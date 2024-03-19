@@ -227,7 +227,7 @@ class Group1(SAONegotiator):
                              bids[0][0] > self.ufun.reserved_value and bids[0][1] > self.partner_reserved_value and
                              bids[0][0] > concession_threshold]
         # ISSUE: FOR SOME REASON POSSIBLE BIDS CAN BE EMPTY, SO ADDED A CHECKER, POSSIBLY MODIFY THIS
-        if len(possible_bids) > 0:
+        if len(possible_bids) == 0:
             return random.choice(self.rational_outcomes)
         return self.rational_outcomes[random.choice(possible_bids)]
 
@@ -316,7 +316,7 @@ class Group1(SAONegotiator):
 
         return self.acceptance_concession_phase[current_phase][0]
     
-    def bidding_curve(self, state: SAOState, final_bid, current_phase):
+    def bidding_curve(self, state: SAOState, current_phase):
         """
         This function determines the bidding curve point at the current time step.
 
@@ -324,7 +324,7 @@ class Group1(SAONegotiator):
             state (SAOState): the `SAOState` containing the offer from your partner (None if you are just starting the negotiation)
                    and other information about the negotiation (e.g. current step, relative time, etc.).
         """
-        if final_bid:
+        if not self.opponent_ends:
             m = self.ufun.reserved_value
         else:
             # The concession threshold aims for the maximum reservation value between the two agents
