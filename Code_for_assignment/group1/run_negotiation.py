@@ -67,8 +67,8 @@ def visualize(negotiation_setup):
     # to be implemented further. Add rvs.
     # adding reserved values for both agents (1(b))
 
-    A_utility.reserved_value = 0.5
-    B_utility.reserved_value = 0.2
+    # A_utility.reserved_value = 0.5
+    # B_utility.reserved_value = 0.2
 
     # this code is already written for you.
     # It creates and adds two agents to the session. We create info about the two agents to share the opponent's utility.
@@ -83,7 +83,6 @@ def visualize(negotiation_setup):
     session.add(AgentB, ufun=B_utility)
 
     session.run()
-    # print(session.pareto_frontier([A_utility, B_utility]))
     session.plot(ylimits=(0.0, 1.01), show_reserved=True)
     plt.show()
 
@@ -98,6 +97,6 @@ def create_info_about_opponentutility(opp_utility):
 
 
 if __name__ == "__main__":
-    # negotiation_setup = assignA()
-    negotiation_setup = assignB()
+    negotiation_setup = assignA()
+    # negotiation_setup = assignB()
     visualize(negotiation_setup)

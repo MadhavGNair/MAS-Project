@@ -6,12 +6,13 @@
 This code is free to use or update given that proper attribution is given to
 the authors and the ANAC 2024 ANL competition.
 """
+import math
 import random
 
 from negmas.outcomes import Outcome
 from negmas.sao import ResponseType, SAONegotiator, SAOResponse, SAOState
 from negmas.preferences import pareto_frontier, nash_points
-
+import numpy as np
 
 class Group1(SAONegotiator):
     """
@@ -28,6 +29,11 @@ class Group1(SAONegotiator):
     is_final_bid = bool
     acceptance_concession_phase = {1: (1, 0), 2: (1, 0), 3: (1, 0)}
     bidding_concession_phase    = {1: (1, 0), 2: (1, 0), 3: (1, 0)}
+
+    partner_reserved_value = 0
+    NR_DETECTING_CELLS = 20
+    opponent_bid_history = list()
+    opponent_utility_history = list()
 
     def on_preferences_changed(self, changes):
         """
@@ -51,9 +57,6 @@ class Group1(SAONegotiator):
 
         rational_outcomes_copy = self.rational_outcomes.copy()
 
-        # Estimate the reservation value, as a first guess, the opponent has the same reserved_value as you
-        self.partner_reserved_value = self.ufun.reserved_value
-
         # from rational_outcomes, select pareto optimal outcomes using the multi-layer pareto strategy
         # the strategy is to set a threshold of pseudo-pareto outcomes. If the initial layer does not have
         # threshold amount of outcomes, removes that layer and calculate the next best pareto outcomes,
@@ -69,19 +72,38 @@ class Group1(SAONegotiator):
             for p_idx in self.pareto_indices:
                 del self.rational_outcomes[p_idx]
             # recompute new pareto layer
-            self.pareto_utilities.extend(
-                list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[0]))
-            self.pareto_indices.extend(
-                list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[1]))
-
-        # sort pareto_utilities and pareto_indices in descending order
-        combined_pareto = list(zip(self.pareto_utilities, self.pareto_indices))
-        self.pareto_outcomes = sorted(combined_pareto, key=lambda x: x[0][0], reverse=True)
+            self.pareto_utilities.extend(list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[0]))
+            self.pareto_indices.extend(list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[1]))
 
         # calculate and store the Nash points
-        # sometimes the actual Nash is not returned since it depends on estimate of opponent's reservation value
+        # ISSUE: WORKS FINE FOR ASSIGNMENT A, BUT NOT B, B SHOWS KALAI INSTEAD OF NASH POINT
+        # POSSIBLE PROBLEM MIGHT BE RESERVATION VALUES NOT BEING TAKEN INTO ACCOUNT
         self.nash_outcomes = nash_points([self.ufun, self.opponent_ufun],
-                                         pareto_frontier([self.ufun, self.opponent_ufun], rational_outcomes_copy)[0])[0][0]
+                                         pareto_frontier([self.ufun, self.opponent_ufun], rational_outcomes_copy)[
+                                             0])[0][0]
+
+
+        ### OPPONENT MODELLING INITIALIZATION ###
+
+        # Detecting region: First bounds of opponent's reservation value          
+        for utilities in sorted(self.pareto_utilities, key= lambda x: x[0]):
+            if utilities[0]>self.ufun.reserved_value:
+                self.opponent_rv_upper_bound = utilities[1]
+                break 
+        self.opponent_rv_lower_bound = sorted(self.pareto_utilities, key= lambda x: x[1])[0][1]
+
+        # Dividing the detecting region into detecting cells
+        detecting_region_lenght = self.opponent_rv_upper_bound - self.opponent_rv_lower_bound
+        self.detecting_cells_bounds = list()
+        for k in range(self.NR_DETECTING_CELLS+1):
+            self.detecting_cells_bounds.append(self.opponent_rv_lower_bound+(k/self.NR_DETECTING_CELLS)*detecting_region_lenght)
+
+        # Uniform distribution in the detecting cells
+        #self.detecting_cells_prob = [1/self.NR_DETECTING_CELLS] * self.NR_DETECTING_CELLS
+        self.detecting_cells_prob = np.full(self.NR_DETECTING_CELLS, fill_value=1/self.NR_DETECTING_CELLS)
+
+        # First guess (if needed)
+        self.partner_reserved_value = self.opponent_rv_upper_bound
 
     def __call__(self, state: SAOState) -> SAOResponse:
         """
@@ -104,23 +126,35 @@ class Group1(SAONegotiator):
         """
         offer = state.current_offer
 
-        # compute who gets the final bid in the first step (True = we end, False = opponent ends)
+        # Compute who gets the final bid (only on first step)
         if state.step == 0:
-            self.is_final_bid = True
+            self.opponent_ends = False
             if offer is None:
-                # if we start and total steps is even, they end the bid
+                self.opponent_starts = False
+                self.opponent_deadline = math.floor(self.nmi.n_steps/2)
+
                 if self.nmi.n_steps % 2 == 0:
-                    self.is_final_bid = False
+                    self.opponent_ends = True   # if we start and total steps is even, they end the bid
+                
             else:
-                # if opponent starts and total steps is odd, they end the bid
+                self.opponent_starts = True
+                self.opponent_deadline = math.ceil(self.nmi.n_steps/2) 
+
                 if self.nmi.n_steps % 2 != 0:
-                    self.is_final_bid = False
+                    self.opponent_ends = True  # if opponent starts and total steps is odd, they end the bid
+                
+                
+        # Compute the current phase (first or second half of negotiation)
+        current_phase = 1 if state.step <= int(self.nmi.n_steps/2) else 2
 
-        # compute the current phase of negotiation
-        current_phase = self.compute_phase(state)
+        # History of opponent bids and utilities
+        if offer is not None:
+            self.opponent_bid_history.append(offer)
+            self.opponent_utility_history.append(self.opponent_ufun(offer))
 
-        # update the opponent's reservation value
-        self.update_partner_reserved_value(state)
+        # Update reservation value (only after the opponent has given us 2 proposals)
+        if len(self.opponent_utility_history) > 2:
+            self.update_partner_reserved_value(state)
 
         # if there are no outcomes (should in theory never happen)
         if self.ufun is None:
@@ -129,12 +163,12 @@ class Group1(SAONegotiator):
         # Determine the acceptability of the offer in the acceptance_strategy
         # change the concession threshold to the curve function when decided
         concession_threshold = 0.6
-        if self.acceptance_strategy(state, concession_threshold):
+        if self.acceptance_strategy(state, concession_threshold, not self.opponent_ends, current_phase):
             return SAOResponse(ResponseType.ACCEPT_OFFER, offer)
 
         # If it's not acceptable, determine the counteroffer in the bidding_strategy
         return SAOResponse(ResponseType.REJECT_OFFER,
-                           self.bidding_strategy(state, concession_threshold, current_phase))
+                           self.bidding_strategy(state, concession_threshold, not self.opponent_ends, current_phase))
 
     def acceptance_strategy(self, state: SAOState, concession_threshold) -> bool:
         """
@@ -206,19 +240,51 @@ class Group1(SAONegotiator):
         Returns: None.
         """
         assert self.ufun and self.opponent_ufun
-
         offer = state.current_offer
+        current_time_opponent = len(self.opponent_utility_history) -1
+
+        # Take random reservation values in the detecting cells
+        random_reservation_values = [random.uniform(self.detecting_cells_bounds[k], self.detecting_cells_bounds[k+1]) for k in range(self.NR_DETECTING_CELLS)]
+
+        def polynomial_concession(t, reservation_value, beta):
+            return self.opponent_utility_history[0] + (reservation_value - self.opponent_utility_history[0]) * (t/self.opponent_deadline) ** beta
+
+        def fitted_beta(reservation_value):
+            p_i = np.log([abs(self.opponent_utility_history[0] - self.opponent_utility_history[t])/abs(self.opponent_utility_history[0] - reservation_value) for t in range(1, len(self.opponent_utility_history))])
+            t_i = np.log([t/self.opponent_deadline for t in range(1, len(self.opponent_utility_history))])
+            return np.dot(p_i, t_i)/np.dot(t_i, t_i)
+
+        def non_linear_correlation(reservation_value):
+            beta = fitted_beta(reservation_value)
+            fitted_offers = [polynomial_concession(t, reservation_value, beta) for t in range(1, len(self.opponent_utility_history))]
+            normalized_fitted_offers = np.array(fitted_offers) - np.mean(fitted_offers)
+            normalized_history_offers = np.array(self.opponent_utility_history[1:]) - np.mean(self.opponent_utility_history[1:])
+            denominator = math.sqrt(np.dot(normalized_fitted_offers, normalized_fitted_offers) * np.dot(normalized_history_offers, normalized_history_offers))
+            if denominator != 0:
+                return np.dot(normalized_fitted_offers, normalized_history_offers) / denominator
+            else:
+                raise ValueError("Null correlation denominator")
+
+        # Compute the fitted curves and the non linear correlation with history utilities
+        likelihoods = [non_linear_correlation(rv)**2 for rv in random_reservation_values]
+
+        # Bayesian update of detection cells probabilities
+        prior_prob = self.detecting_cells_prob
+        posterior_prob = np.zeros(self.NR_DETECTING_CELLS)
+        for k in range(self.NR_DETECTING_CELLS):
+            posterior_prob[k] = prior_prob[k] * likelihoods[k] / np.dot(prior_prob, np.array(likelihoods))
+        self.detecting_cells_prob = posterior_prob
+        #print(sum(self.detecting_cells_prob)) # Check that we are still working with a prob distribution
 
         if self.opponent_ufun(offer) < self.partner_reserved_value:
             self.partner_reserved_value = float(self.opponent_ufun(offer)) / 2
-
         # update rational_outcomes by removing the outcomes that are below the reservation value of the opponent
         # Watch out: if the reserved value decreases, this will not add any outcomes.
-        rational_outcomes = self.rational_outcomes = [
+        """ rational_outcomes = self.rational_outcomes = [
             _
             for _ in self.rational_outcomes
             if self.opponent_ufun(_) > self.partner_reserved_value
-        ]
+        ] """
     
     def acceptance_curve(self, state: SAOState, current_phase):
         """
