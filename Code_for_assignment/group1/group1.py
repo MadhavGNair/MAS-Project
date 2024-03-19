@@ -28,6 +28,10 @@ class Group1(SAONegotiator):
     is_final_bid = bool
     acceptance_concession_phase = {1: (1, 0), 2: (1, 0), 3: (1, 0)}
     bidding_concession_phase    = {1: (1, 0), 2: (1, 0), 3: (1, 0)}
+    pareto_utilities = list()
+    pareto_indices = list()
+    nash_outcomes = list()
+    NR_DETECTING_CELLS = 20
 
     def on_preferences_changed(self, changes):
         """
@@ -51,9 +55,6 @@ class Group1(SAONegotiator):
 
         rational_outcomes_copy = self.rational_outcomes.copy()
 
-        # Estimate the reservation value, as a first guess, the opponent has the same reserved_value as you
-        self.partner_reserved_value = self.ufun.reserved_value
-
         # from rational_outcomes, select pareto optimal outcomes using the multi-layer pareto strategy
         # the strategy is to set a threshold of pseudo-pareto outcomes. If the initial layer does not have
         # threshold amount of outcomes, removes that layer and calculate the next best pareto outcomes,
@@ -69,19 +70,37 @@ class Group1(SAONegotiator):
             for p_idx in self.pareto_indices:
                 del self.rational_outcomes[p_idx]
             # recompute new pareto layer
-            self.pareto_utilities.extend(
-                list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[0]))
-            self.pareto_indices.extend(
-                list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[1]))
-
-        # sort pareto_utilities and pareto_indices in descending order
-        combined_pareto = list(zip(self.pareto_utilities, self.pareto_indices))
-        self.pareto_outcomes = sorted(combined_pareto, key=lambda x: x[0][0], reverse=True)
+            self.pareto_utilities.extend(list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[0]))
+            self.pareto_indices.extend(list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[1]))
 
         # calculate and store the Nash points
-        # sometimes the actual Nash is not returned since it depends on estimate of opponent's reservation value
+        # ISSUE: WORKS FINE FOR ASSIGNMENT A, BUT NOT B, B SHOWS KALAI INSTEAD OF NASH POINT
+        # POSSIBLE PROBLEM MIGHT BE RESERVATION VALUES NOT BEING TAKEN INTO ACCOUNT
         self.nash_outcomes = nash_points([self.ufun, self.opponent_ufun],
-                                         pareto_frontier([self.ufun, self.opponent_ufun], rational_outcomes_copy)[0])[0][0]
+                                         pareto_frontier([self.ufun, self.opponent_ufun], rational_outcomes_copy)[
+                                             0])[0][0]
+
+
+        ### OPPONENT MODELLING INITIALIZATION ###
+
+        # Detecting region: First bounds of opponent's reservation value          
+        for utilities in sorted(self.pareto_utilities, key= lambda x: x[0]):
+            if utilities[0]>self.ufun.reserved_value:
+                self.opponent_rv_upper_bound = utilities[1]
+                break 
+        self.opponent_rv_lower_bound = sorted(self.pareto_utilities, key= lambda x: x[1])[0][1]
+
+        # Dividing the detecting region into detecting cells
+        detecting_region_lenght = self.opponent_rv_upper_bound - self.opponent_rv_lower_bound
+        self.detecting_cells_bounds = list()
+        for k in range(self.NR_DETECTING_CELLS+1):
+            self.detecting_cells_bounds.append(self.opponent_rv_lower_bound+(k/self.NR_DETECTING_CELLS)*detecting_region_lenght)
+
+        # Uniform distribution in the detecting cells
+        self.detecting_cells_prob = [1/self.NR_DETECTING_CELLS] * self.NR_DETECTING_CELLS
+
+        # First guess (if needed)
+        self.partner_reserved_value = self.opponent_rv_upper_bound
 
     def __call__(self, state: SAOState) -> SAOResponse:
         """
