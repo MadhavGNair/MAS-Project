@@ -26,7 +26,7 @@ class Group1(SAONegotiator):
     pareto_utilities = list()
     pareto_indices = list()
     nash_outcomes = list()
-    is_final_bid = bool
+    opponent_ends = bool
     acceptance_concession_phase = {1: (1, 0), 2: (1, 0), 3: (1, 0)}
     bidding_concession_phase    = {1: (1, 0), 2: (1, 0), 3: (1, 0)}
 
@@ -163,12 +163,12 @@ class Group1(SAONegotiator):
         # Determine the acceptability of the offer in the acceptance_strategy
         # change the concession threshold to the curve function when decided
         concession_threshold = 0.6
-        if self.acceptance_strategy(state, concession_threshold, not self.opponent_ends, current_phase):
+        if self.acceptance_strategy(state, concession_threshold):
             return SAOResponse(ResponseType.ACCEPT_OFFER, offer)
 
         # If it's not acceptable, determine the counteroffer in the bidding_strategy
         return SAOResponse(ResponseType.REJECT_OFFER,
-                           self.bidding_strategy(state, concession_threshold, not self.opponent_ends, current_phase))
+                           self.bidding_strategy(state, concession_threshold, current_phase))
 
     def acceptance_strategy(self, state: SAOState, concession_threshold) -> bool:
         """
@@ -188,7 +188,7 @@ class Group1(SAONegotiator):
         offer_utility = float(self.ufun(offer))
 
         # define two strategies for when opponent has and does not have last bid
-        if self.is_final_bid:
+        if not self.opponent_ends:
             # if offer is above or equal to Nash point, our reservation value and our concession threshold, accept
             if offer is not None and offer_utility >= self.nash_outcomes[0]\
                     and offer_utility >= self.ufun.reserved_value and offer_utility >= concession_threshold:
@@ -215,7 +215,7 @@ class Group1(SAONegotiator):
 
         # if we have final bid, randomly propose bids from pareto_outcomes, above Nash point, reservation values, and
         # concession curve?
-        if self.is_final_bid:
+        if not self.opponent_ends:
             possible_bids = [bids[1] for bids in self.pareto_outcomes if bids[0][0] >= self.nash_outcomes[0] and
                              bids[0][0] > self.ufun.reserved_value and bids[0][1] > self.partner_reserved_value and
                              bids[0][0] > concession_threshold]
