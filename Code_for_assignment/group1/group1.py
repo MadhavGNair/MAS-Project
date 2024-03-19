@@ -142,10 +142,12 @@ class Group1(SAONegotiator):
 
                 if self.nmi.n_steps % 2 != 0:
                     self.opponent_ends = True  # if opponent starts and total steps is odd, they end the bid
+
+            self.deadline = self.nmi.n_steps - self.opponent_deadline
                 
                 
         # Compute the current phase (first or second half of negotiation)
-        current_phase = 1 if state.step <= int(self.nmi.n_steps/2) else 2
+        current_phase = self.compute_phase(state)
 
         # History of opponent bids and utilities
         if offer is not None:
@@ -299,12 +301,12 @@ class Group1(SAONegotiator):
         m = self.ufun.reserved_value
         if current_phase == 1:
             x = state.step
-            T = self.nmi.n_steps
+            T = self.deadline
             M = 1
             beta = 0.5
         else:
             x = state.step - self.acceptance_concession_phase[current_phase - 1][1]
-            T = self.nmi.n_steps - self.acceptance_concession_phase[current_phase - 1][1]
+            T = self.deadline - self.acceptance_concession_phase[current_phase - 1][1]
             M = self.acceptance_concession_phase[current_phase - 1][0]
 
             if current_phase == 2:
@@ -334,12 +336,12 @@ class Group1(SAONegotiator):
         
         if current_phase == 1:
             x = state.step
-            T = self.nmi.n_steps
+            T = self.deadline
             M = 1
             beta = 0.5
         else:
             x = state.step - self.bidding_concession_phase[current_phase - 1][1]
-            T = self.nmi.n_steps - self.bidding_concession_phase[current_phase - 1][1]
+            T = self.deadline - self.bidding_concession_phase[current_phase - 1][1]
             M = self.bidding_concession_phase[current_phase - 1][0]
 
             if current_phase == 2:
@@ -362,9 +364,9 @@ class Group1(SAONegotiator):
         Returns:
             The phase as an Integer.
         """
-        if state.step <= (self.nmi.n_steps // 2):
+        if state.step <= (self.deadline // 2):
             return 1
-        elif state.step <= ((3 * self.nmi.n_steps) // 4):
+        elif state.step <= ((3 * self.deadline) // 4):
             return 2
         else:
             return 3
