@@ -163,12 +163,28 @@ class Group1(SAONegotiator):
 
         if final_bid or phase == 1:
             # We have the last bid or are in the first phase
+            pareto_outcomes = self._pareto_outcomes(self.rational_outcomes)
+            print(pareto_outcomes)
             pass
         else:
             # We do not have the last bid and are in the second phase
             pass
 
+        # print([self.ufun(s) for s in self.rational_outcomes])
         return random.choice(self.rational_outcomes)
+
+    def _pareto_outcomes(self, outcomes):
+        res = []
+        for o in outcomes:
+            util = self.ufun(o)
+            opponent_util = self.opponent_ufun(o)
+            if all(
+                util < self.ufun(p)
+                for p in outcomes
+                if self.opponent_ufun(p) < opponent_util
+            ):
+                res.append(o)
+        return res
 
     def update_partner_reserved_value(self, state: SAOState) -> None:
         """This is one of the functions you can implement.
