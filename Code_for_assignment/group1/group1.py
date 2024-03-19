@@ -162,9 +162,11 @@ class Group1(SAONegotiator):
 
         # Determine the acceptability of the offer in the acceptance_strategy
         # change the concession threshold to the curve function when decided
-        concession_threshold = 0.6
+        concession_threshold = self.acceptance_curve(state, current_phase)
         if self.acceptance_strategy(state, concession_threshold):
             return SAOResponse(ResponseType.ACCEPT_OFFER, offer)
+        
+        concession_threshold = self.bidding_curve(state, current_phase)
 
         # If it's not acceptable, determine the counteroffer in the bidding_strategy
         return SAOResponse(ResponseType.REJECT_OFFER,
