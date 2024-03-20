@@ -244,11 +244,6 @@ class Group1(SAONegotiator):
         Returns: None.
         """
         assert self.ufun and self.opponent_ufun
-        offer = state.current_offer
-        current_time_opponent = len(self.opponent_utility_history) -1
-
-        # Take random reservation values in the detecting cells
-        random_reservation_values = [random.uniform(self.detecting_cells_bounds[k], self.detecting_cells_bounds[k+1]) for k in range(self.NR_DETECTING_CELLS)]
 
         def polynomial_concession(t, reservation_value, beta):
             return self.opponent_utility_history[0] + (reservation_value - self.opponent_utility_history[0]) * (t/self.opponent_deadline) ** beta
@@ -269,6 +264,9 @@ class Group1(SAONegotiator):
             else:
                 raise ValueError("Null correlation denominator")
 
+        # Take random reservation values in the detecting cells
+        random_reservation_values = [random.uniform(self.detecting_cells_bounds[k], self.detecting_cells_bounds[k+1]) for k in range(self.NR_DETECTING_CELLS)]
+
         # Compute the fitted curves and the non linear correlation with history utilities
         likelihoods = [non_linear_correlation(rv)**2 for rv in random_reservation_values]
 
@@ -278,10 +276,11 @@ class Group1(SAONegotiator):
         for k in range(self.NR_DETECTING_CELLS):
             posterior_prob[k] = prior_prob[k] * likelihoods[k] / np.dot(prior_prob, np.array(likelihoods))
         self.detecting_cells_prob = posterior_prob
-        #print(sum(self.detecting_cells_prob)) # Check that we are still working with a prob distribution
 
-        if self.opponent_ufun(offer) < self.partner_reserved_value:
-            self.partner_reserved_value = float(self.opponent_ufun(offer)) / 2
+        # Selecting a reservation value from detecting cells probability distribution: the upper bound of the cell with max prob.
+        self.partner_reserved_value = self.detecting_cells_bounds[np.argmax(self.detecting_cells_prob) + 1]
+        print(self.partner_reserved_value)
+
         # update rational_outcomes by removing the outcomes that are below the reservation value of the opponent
         # Watch out: if the reserved value decreases, this will not add any outcomes.
         """ rational_outcomes = self.rational_outcomes = [
