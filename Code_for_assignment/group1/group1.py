@@ -245,7 +245,8 @@ class Group1(SAONegotiator):
             vp_max = max(self.opponent_utility_history)  # maximum utility achieved by the opponent
             vp_t = self.opponent_utility_history[:-1]  # current utility, opponent
             vp_tminus = self.opponent_utility_history[:-2]  # previous utility, opponent
-            alpha = math.log10(math.pow((state.relative_time / state[:-1].relative_time), ((vp_max - vp_t) / (vp_max - vp_tminus))))  # equation 8 Zhang et al.
+            if state.step > 1:
+                alpha = math.log10(math.pow((state.step / state.step - 1), ((vp_max - vp_t) / (vp_max - vp_tminus))))  # equation 8 Zhang et al.
 
             return alpha
 
