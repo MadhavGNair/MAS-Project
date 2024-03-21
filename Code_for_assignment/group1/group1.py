@@ -10,6 +10,7 @@ import random
 
 from negmas.outcomes import Outcome
 from negmas.sao import ResponseType, SAONegotiator, SAOResponse, SAOState
+from negmas.preferences import pareto_frontier, nash_points
 
 
 class Group1(SAONegotiator):
@@ -19,6 +20,9 @@ class Group1(SAONegotiator):
 
     rational_outcomes = tuple()
     partner_reserved_value = 0
+
+    bids = None
+    opponent_bids = []
 
     def on_preferences_changed(self, changes):
         """
@@ -160,31 +164,46 @@ class Group1(SAONegotiator):
         # - If in second phase, recycle the list of stored bids from the opponent.
         # IF WE HAVE LAST BID:
         # Same strategy as first phase of ^.
+        #
+
+        if state is not None:
+            self.opponent_bids.append(state.current_offer)
+            self.opponent_bids = sorted(self.opponent_bids, key=self.ufun, reverse=True)
+
+        if self.bids is None:
+            pareto_bids = [
+                self.rational_outcomes[i]
+                for i in pareto_frontier(
+                    [self.ufun, self.opponent_ufun], outcomes=self.rational_outcomes
+                )[1]
+            ]
+
+            # nash_point = nash_points(
+            #     [self.ufun, self.opponent_ufun],
+            #     pareto_bids,
+            # )
+            #
+            # print(nash_point)
+
+            # TODO: apply nash point
+            self.bids = sorted(pareto_bids, key=self.ufun, reverse=True)
+
+        self.bids = [
+            bid for bid in self.bids if self.ufun(bid) >= self.partner_reserved_value
+        ]
 
         if final_bid or phase == 1:
             # We have the last bid or are in the first phase
-            pareto_outcomes = self._pareto_outcomes(self.rational_outcomes)
-            print(pareto_outcomes)
-            pass
+            bid = self.bids.pop(0)
+            self.bids.append(bid)
+            return bid
         else:
             # We do not have the last bid and are in the second phase
-            pass
+            bid = self.opponent_bids.pop(0)
+            self.opponent_bids.append(bid)
+            return bid
 
-        # print([self.ufun(s) for s in self.rational_outcomes])
-        return random.choice(self.rational_outcomes)
-
-    def _pareto_outcomes(self, outcomes):
-        res = []
-        for o in outcomes:
-            util = self.ufun(o)
-            opponent_util = self.opponent_ufun(o)
-            if all(
-                util < self.ufun(p)
-                for p in outcomes
-                if self.opponent_ufun(p) < opponent_util
-            ):
-                res.append(o)
-        return res
+        # return random.choice(self.rational_outcomes)
 
     def update_partner_reserved_value(self, state: SAOState) -> None:
         """This is one of the functions you can implement.
