@@ -330,12 +330,12 @@ class Group1(SAONegotiator):
         
         if current_phase == 1:
             x = state.step
-            T = self.deadline
+            T = self.nmi.n_steps
             M = 1
             beta = 0.5
         else:
             x = state.step - self.bidding_concession_phase[current_phase - 1][1]
-            T = self.deadline - self.bidding_concession_phase[current_phase - 1][1]
+            T = self.nmi.n_steps - self.bidding_concession_phase[current_phase - 1][1]
             M = self.bidding_concession_phase[current_phase - 1][0]
 
             if current_phase == 2:
