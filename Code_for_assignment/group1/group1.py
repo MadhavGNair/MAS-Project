@@ -320,6 +320,32 @@ class Group1(SAONegotiator):
                    and other information about the negotiation (e.g. current step, relative time, etc.).
             current_phase: the current phase
         """
+        if not self.opponent_ends:
+            m = self.ufun.reserved_value
+        else:
+            # The concession threshold aims for the maximum reservation value between the two agents
+            # This allows us to "follow" the opponent's strategy, but only in the case that 
+            # (our prediction of) their reservation value is higher than ours
+            m = max(self.ufun.reserved_value, self.partner_reserved_value)
+        
+        if current_phase == 1:
+            x = state.step
+            T = self.deadline
+            M = 1
+            beta = 0.5
+        else:
+            x = state.step - self.bidding_concession_phase[current_phase - 1][1]
+            T = self.deadline - self.bidding_concession_phase[current_phase - 1][1]
+            M = self.bidding_concession_phase[current_phase - 1][0]
+
+            if current_phase == 2:
+                beta = 1
+            else:
+                beta = 1.5
+
+        self.bidding_concession_phase[current_phase] = (M - ((M - m) * (x / T)**(1 / beta)), state.step)
+
+        return self.bidding_concession_phase[current_phase][0]
 
     
     def compute_phase(self, state: SAOState) -> int:
