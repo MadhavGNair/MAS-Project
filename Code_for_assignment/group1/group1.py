@@ -87,7 +87,7 @@ class Group1(SAONegotiator):
 
         # Detecting region: First bounds of opponent's reservation value          
         for utilities in sorted(self.pareto_utilities, key= lambda x: x[0]):
-            if utilities[0]>self.ufun.reserved_value:
+            if utilities[0] > self.ufun.reserved_value:
                 self.opponent_rv_upper_bound = utilities[1]
                 break 
         self.opponent_rv_lower_bound = sorted(self.pareto_utilities, key= lambda x: x[1])[0][1]
@@ -257,6 +257,15 @@ class Group1(SAONegotiator):
             p_i = np.log([abs(self.opponent_utility_history[0] - self.opponent_utility_history[t])/abs(self.opponent_utility_history[0] - reservation_value) for t in range(1, len(self.opponent_utility_history))])
             t_i = np.log([t/self.opponent_deadline for t in range(1, len(self.opponent_utility_history))])
             return np.dot(p_i, t_i)/np.dot(t_i, t_i)
+
+        def fitted_alpha(reservation_value):
+            alpha = 0
+            vp_max = max(self.opponent_utility_history)  # maximum utility achieved by the opponent
+            vp_t = self.opponent_utility_history[:-1]  # current utility, opponent
+            vp_tminus = self.opponent_utility_history[:-2]  # previous utility, opponent
+            alpha = math.log10(math.pow((state.relative_time / state[:-1].relative_time), ((vp_max - vp_t) / (vp_max - vp_tminus))))  # equation 8 Zhang et al.
+
+            return alpha
 
         def non_linear_correlation(reservation_value):
             beta = fitted_beta(reservation_value)
