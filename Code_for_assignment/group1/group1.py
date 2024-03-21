@@ -29,11 +29,13 @@ class Group1(SAONegotiator):
     opponent_ends = bool
     acceptance_concession_phase = {1: (1, 0), 2: (1, 0), 3: (1, 0)}
     bidding_concession_phase    = {1: (1, 0), 2: (1, 0), 3: (1, 0)}
-
-    partner_reserved_value = 0
     NR_DETECTING_CELLS = 20
     opponent_bid_history = list()
     opponent_utility_history = list()
+    opponent_rv_upper_bound = float()
+    opponent_rv_lower_bound = float()
+    detecting_cells_bounds = list()
+    detecting_cells_prob = np.array
 
     def on_preferences_changed(self, changes):
         """
@@ -56,6 +58,8 @@ class Group1(SAONegotiator):
         ]
 
         rational_outcomes_copy = self.rational_outcomes.copy()
+
+        print("index= ", self.nmi.negotiator_index(self.id))
 
         # from rational_outcomes, select pareto optimal outcomes using the multi-layer pareto strategy
         # the strategy is to set a threshold of pseudo-pareto outcomes. If the initial layer does not have
@@ -82,7 +86,6 @@ class Group1(SAONegotiator):
                                          pareto_frontier([self.ufun, self.opponent_ufun], rational_outcomes_copy)[
                                              0])[0][0]
 
-
         ### OPPONENT MODELLING INITIALIZATION ###
 
         # Detecting region: First bounds of opponent's reservation value          
@@ -93,10 +96,9 @@ class Group1(SAONegotiator):
         self.opponent_rv_lower_bound = sorted(self.pareto_utilities, key= lambda x: x[1])[0][1]
 
         # Dividing the detecting region into detecting cells
-        detecting_region_lenght = self.opponent_rv_upper_bound - self.opponent_rv_lower_bound
-        self.detecting_cells_bounds = list()
+        detecting_region_length = self.opponent_rv_upper_bound - self.opponent_rv_lower_bound
         for k in range(self.NR_DETECTING_CELLS+1):
-            self.detecting_cells_bounds.append(self.opponent_rv_lower_bound+(k/self.NR_DETECTING_CELLS)*detecting_region_lenght)
+            self.detecting_cells_bounds.append(self.opponent_rv_lower_bound+(k/self.NR_DETECTING_CELLS)*detecting_region_length)
 
         # Uniform distribution in the detecting cells
         #self.detecting_cells_prob = [1/self.NR_DETECTING_CELLS] * self.NR_DETECTING_CELLS
@@ -128,23 +130,11 @@ class Group1(SAONegotiator):
 
         # Compute who gets the final bid (only on first step)
         if state.step == 0:
-            self.opponent_ends = False
             if offer is None:
-                self.opponent_starts = False
-                self.opponent_deadline = math.floor(self.nmi.n_steps/2)
-
-                if self.nmi.n_steps % 2 == 0:
-                    self.opponent_ends = True   # if we start and total steps is even, they end the bid
-                
+                self.opponent_ends = True
             else:
-                self.opponent_starts = True
-                self.opponent_deadline = math.ceil(self.nmi.n_steps/2) 
+                self.opponent_ends = False
 
-                if self.nmi.n_steps % 2 != 0:
-                    self.opponent_ends = True  # if opponent starts and total steps is odd, they end the bid
-
-            self.deadline = self.nmi.n_steps - self.opponent_deadline
-                
                 
         # Compute the current phase (first or second half of negotiation)
         current_phase = self.compute_phase(state)
@@ -276,7 +266,7 @@ class Group1(SAONegotiator):
         # Take random reservation values in the detecting cells
         random_reservation_values = [random.uniform(self.detecting_cells_bounds[k], self.detecting_cells_bounds[k+1]) for k in range(self.NR_DETECTING_CELLS)]
 
-        # Compute the fitted curves and the non linear correlation with history utilities
+        # Compute the fitted curves and the non-linear correlation with history utilities
         likelihoods = [non_linear_correlation(rv)**2 for rv in random_reservation_values]
 
         # Bayesian update of detection cells probabilities
@@ -309,12 +299,12 @@ class Group1(SAONegotiator):
         m = self.ufun.reserved_value
         if current_phase == 1:
             x = state.step
-            T = self.deadline
+            T = self.nmi.n_steps
             M = 1
             beta = 0.5
         else:
             x = state.step - self.acceptance_concession_phase[current_phase - 1][1]
-            T = self.deadline - self.acceptance_concession_phase[current_phase - 1][1]
+            T = self.nmi.n_steps - self.acceptance_concession_phase[current_phase - 1][1]
             M = self.acceptance_concession_phase[current_phase - 1][0]
 
             if current_phase == 2:
@@ -333,6 +323,7 @@ class Group1(SAONegotiator):
         Args:
             state (SAOState): the `SAOState` containing the offer from your partner (None if you are just starting the negotiation)
                    and other information about the negotiation (e.g. current step, relative time, etc.).
+            current_phase: the current phase
         """
         if not self.opponent_ends:
             m = self.ufun.reserved_value
@@ -344,12 +335,12 @@ class Group1(SAONegotiator):
         
         if current_phase == 1:
             x = state.step
-            T = self.deadline
+            T = self.nmi.n_steps
             M = 1
             beta = 0.5
         else:
             x = state.step - self.bidding_concession_phase[current_phase - 1][1]
-            T = self.deadline - self.bidding_concession_phase[current_phase - 1][1]
+            T = self.nmi.n_steps - self.bidding_concession_phase[current_phase - 1][1]
             M = self.bidding_concession_phase[current_phase - 1][0]
 
             if current_phase == 2:
@@ -372,9 +363,9 @@ class Group1(SAONegotiator):
         Returns:
             The phase as an Integer.
         """
-        if state.step <= (self.deadline // 2):
+        if state.step <= (self.nmi.n_steps // 2):
             return 1
-        elif state.step <= ((3 * self.deadline) // 4):
+        elif state.step <= ((3 * self.nmi.n_steps) // 4):
             return 2
         else:
             return 3
