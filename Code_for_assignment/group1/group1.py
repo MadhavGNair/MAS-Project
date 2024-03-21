@@ -77,6 +77,10 @@ class Group1(SAONegotiator):
             self.pareto_utilities.extend(list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[0]))
             self.pareto_indices.extend(list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[1]))
 
+        # sort pareto_utilities and pareto_indices in descending order
+        combined_pareto = list(zip(self.pareto_utilities, self.pareto_indices))
+        self.pareto_outcomes = sorted(combined_pareto, key=lambda x: x[0][0], reverse=True)
+
         # calculate and store the Nash points
         # ISSUE: WORKS FINE FOR ASSIGNMENT A, BUT NOT B, B SHOWS KALAI INSTEAD OF NASH POINT
         # POSSIBLE PROBLEM MIGHT BE RESERVATION VALUES NOT BEING TAKEN INTO ACCOUNT
@@ -273,7 +277,6 @@ class Group1(SAONegotiator):
 
         # Selecting a reservation value from detecting cells probability distribution: the upper bound of the cell with max prob.
         self.partner_reserved_value = self.detecting_cells_bounds[np.argmax(self.detecting_cells_prob) + 1]
-        print(self.partner_reserved_value)
 
         # update rational_outcomes by removing the outcomes that are below the reservation value of the opponent
         # Watch out: if the reserved value decreases, this will not add any outcomes.
