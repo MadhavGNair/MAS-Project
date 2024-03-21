@@ -59,8 +59,6 @@ class Group1(SAONegotiator):
 
         rational_outcomes_copy = self.rational_outcomes.copy()
 
-        print("index= ", self.nmi.negotiator_index(self.id))
-
         # from rational_outcomes, select pareto optimal outcomes using the multi-layer pareto strategy
         # the strategy is to set a threshold of pseudo-pareto outcomes. If the initial layer does not have
         # threshold amount of outcomes, removes that layer and calculate the next best pareto outcomes,
@@ -135,7 +133,6 @@ class Group1(SAONegotiator):
             else:
                 self.opponent_ends = False
 
-                
         # Compute the current phase (first or second half of negotiation)
         current_phase = self.compute_phase(state)
 
