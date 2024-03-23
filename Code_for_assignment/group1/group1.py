@@ -333,7 +333,7 @@ class Group1(SAONegotiator):
             else:
                 beta = 1.5
 
-        self.acceptance_concession_phase[current_phase] = (M - ((M - m) * (x / T)**(1 / beta)), state.step)
+        self.acceptance_concession_phase[current_phase] = (M - ((M - m) * pow(x/T, beta)), state.step)
 
         return self.acceptance_concession_phase[current_phase][0]
 
@@ -369,7 +369,7 @@ class Group1(SAONegotiator):
             else:
                 beta = 1.5
 
-        self.bidding_concession_phase[current_phase] = (M - ((M - m) * (x / T)**(1 / beta)), state.step)
+        self.bidding_concession_phase[current_phase] = (M - ((M - m) * pow(x/T, beta)), state.step)
 
         return self.bidding_concession_phase[current_phase][0]
 
