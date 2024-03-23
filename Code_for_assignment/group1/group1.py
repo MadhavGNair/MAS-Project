@@ -192,30 +192,43 @@ class Group1(SAONegotiator):
                 return True
         return False
 
-    def bidding_strategy(self, state: SAOState, concession_threshold, phase) -> Outcome | None:
+    def bidding_strategy(self, state: SAOState, concession_threshold) -> Outcome | None:
         """
-        This is one of the functions you need to implement.
-        It should determine the counteroffer.
+        This function implements how (counter-)offers are made.
+        The basic idea is to filter bids that are on the Pareto frontier, that gives us better utility that Nash point,
+        that gives utility above both our and the opponent's reservation value, and above the concession threshold.
+        However, there is a 5% chance of randomly choosing a bid from all rational outcomes to throw the opponent's
+        estimate off.
+        One caveat is that, if we have the final bid, in the last few steps (last 5%), we will bid bids that are slightly
+        above the opponent's reservation estimate, but gives us the highest utility.
 
         Args:
             state (SAOState): the `SAOState` containing the offer from your partner (None if you are just starting the negotiation)
                    and other information about the negotiation (e.g. current step, relative time, etc.).
             concession_threshold: the threshold above or equal to which our agent will accept the offer
-            phase: integer indicating the current phase of negotiation (1 for first half, 2 for second half)
 
         Returns: The counteroffer as Outcome.
         """
 
-        # if we have final bid, randomly propose bids from pareto_outcomes, above Nash point, reservation values, and
-        # concession curve?
-        epsilon = 0.2
+        # define epsilon to be the chance of random bid being offered
+        epsilon = 0.05
+        # this threshold defines the final number of bids where stubborn strategy is implemented
+        final_bid_threshold = int(0.05 * self.nmi.n_steps) if self.nmi.n_steps > 100 else 5
+        # compute all possible bids given the criteria for 'good' bids
         possible_bids = [bids for bids in self.pareto_outcomes if bids[0][0] >= self.nash_outcomes[0] and
                          bids[0][0] > self.ufun.reserved_value and bids[0][1] > self.partner_reserved_value and
                          bids[0][0] > concession_threshold]
 
+        # in the rare case that there are no bids that satisfy the above conditions, bid the best bid for us
         if len(possible_bids) == 0:
             return self.rational_outcomes[max(self.pareto_outcomes, key=lambda x:x[0][0])[1]]
-        elif epsilon > random.random():
+        # if we have final bid, and the final steps are reached, bid the best offers
+        elif self.opponent_ends == False and state.step >= final_bid_threshold:
+            best_offers = [offer for offer in self.rational_outcomes if offer[0][1] > self.partner_reserved_value]
+            return self.rational_outcomes[min(best_offers, key=lambda x: x[0][0])[1]]
+        # if in any other scenario, bid the lowest bid for opponent
+        # IF PERFORMANCE IS BAD, MAYBE KEEP TRACK OF OFFERED BIDS AND DONT OFFER THEM AGAIN
+        elif epsilon <= random.random():
             return self.rational_outcomes[min(self.pareto_outcomes, key=lambda x: x[0][1])[1]]
         return self.rational_outcomes[random.choice(possible_bids)[1]]
 
