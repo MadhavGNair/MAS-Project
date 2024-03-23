@@ -67,8 +67,8 @@ def visualize(negotiation_setup):
     # to be implemented further. Add rvs.
     # adding reserved values for both agents (1(b))
 
-    # A_utility.reserved_value = 0.5
-    # B_utility.reserved_value = 0.2
+    A_utility.reserved_value = 0.5
+    B_utility.reserved_value = 0.2
 
     # this code is already written for you.
     # It creates and adds two agents to the session. We create info about the two agents to share the opponent's utility.

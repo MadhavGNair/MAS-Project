@@ -13,6 +13,7 @@ from negmas.outcomes import Outcome
 from negmas.sao import ResponseType, SAONegotiator, SAOResponse, SAOState
 from negmas.preferences import pareto_frontier, nash_points
 import numpy as np
+np.seterr(all='raise')
 
 class Group1(SAONegotiator):
     """
@@ -30,6 +31,7 @@ class Group1(SAONegotiator):
     acceptance_concession_phase = {1: (1, 0), 2: (1, 0), 3: (1, 0)}
     bidding_concession_phase    = {1: (1, 0), 2: (1, 0), 3: (1, 0)}
     NR_DETECTING_CELLS = 20
+    NR_STEPS_BEFORE_OPP_MODEL = 10
     opponent_bid_history = list()
     opponent_utility_history = list()
     opponent_rv_upper_bound = float()
@@ -97,17 +99,12 @@ class Group1(SAONegotiator):
                 break 
         self.opponent_rv_lower_bound = sorted(self.pareto_utilities, key= lambda x: x[1])[0][1]
 
-        # Dividing the detecting region into detecting cells
-        detecting_region_length = self.opponent_rv_upper_bound - self.opponent_rv_lower_bound
-        for k in range(self.NR_DETECTING_CELLS+1):
-            self.detecting_cells_bounds.append(self.opponent_rv_lower_bound+(k/self.NR_DETECTING_CELLS)*detecting_region_length)
-
         # Uniform distribution in the detecting cells
         #self.detecting_cells_prob = [1/self.NR_DETECTING_CELLS] * self.NR_DETECTING_CELLS
         self.detecting_cells_prob = np.full(self.NR_DETECTING_CELLS, fill_value=1/self.NR_DETECTING_CELLS)
 
-        # First guess (if needed)
-        self.partner_reserved_value = self.opponent_rv_upper_bound
+        self.partner_reserved_value = self.opponent_rv_upper_bound # First guess (if needed)
+
 
     def __call__(self, state: SAOState) -> SAOResponse:
         """
@@ -144,9 +141,10 @@ class Group1(SAONegotiator):
         if offer is not None:
             self.opponent_bid_history.append(offer)
             self.opponent_utility_history.append(self.opponent_ufun(offer))
+            #print(self.opponent_utility_history)
 
         # Update reservation value (only after the opponent has given us 2 proposals)
-        if len(self.opponent_utility_history) > 2:
+        if len(self.opponent_utility_history) >= self.NR_STEPS_BEFORE_OPP_MODEL:
             self.update_partner_reserved_value(state)
 
         # if there are no outcomes (should in theory never happen)
@@ -233,23 +231,43 @@ class Group1(SAONegotiator):
         """
         assert self.ufun and self.opponent_ufun
 
+        # Initialization part 2
+        if len(self.opponent_utility_history) == self.NR_STEPS_BEFORE_OPP_MODEL:
+            # Update upper bound with first bid information
+            if self.opponent_rv_upper_bound >= self.opponent_utility_history[0]:
+                self.opponent_rv_upper_bound = self.opponent_utility_history[0]-self.opponent_utility_history[0]/self.NR_DETECTING_CELLS
+            self.partner_reserved_value = self.opponent_rv_upper_bound # First guess (if needed)
+
+            # Dividing the detecting region into detecting cells
+            detecting_region_length = self.opponent_rv_upper_bound - self.opponent_rv_lower_bound
+            for k in range(self.NR_DETECTING_CELLS+1):
+                self.detecting_cells_bounds.append(self.opponent_rv_lower_bound+(k/self.NR_DETECTING_CELLS)*detecting_region_length)
+
         def polynomial_concession(t, reservation_value, beta):
-            return self.opponent_utility_history[0] + (reservation_value - self.opponent_utility_history[0]) * (t/self.nmi.n_steps) ** beta
+            return self.opponent_utility_history[0] + (reservation_value - self.opponent_utility_history[0]) * pow(t/self.nmi.n_steps, beta) 
 
         def fitted_beta(reservation_value):
-            p_i = np.log([abs(self.opponent_utility_history[0] - self.opponent_utility_history[t])/abs(self.opponent_utility_history[0] - reservation_value) for t in range(1, len(self.opponent_utility_history))])
+            p_i = np.log([(self.opponent_utility_history[0]-self.opponent_utility_history[t]) for t in range(1, len(self.opponent_utility_history))]) -np.log([(self.opponent_utility_history[0] - reservation_value) for t in range(1, len(self.opponent_utility_history))])
+            #p_i = np.log([(self.opponent_utility_history[0] - self.opponent_utility_history[t])/(self.opponent_utility_history[0] - reservation_value) for t in range(1, len(self.opponent_utility_history))])
             t_i = np.log([t/self.nmi.n_steps for t in range(1, len(self.opponent_utility_history))])
-            return np.dot(p_i, t_i)/np.dot(t_i, t_i)
+            beta = np.dot(p_i, t_i)/np.dot(t_i, t_i)
+            if beta == float("inf"):
+                return 5
+            else:
+                return beta
 
         def fitted_alpha(reservation_value):
-            alpha = 0
             vp_max = max(self.opponent_utility_history)  # maximum utility achieved by the opponent
-            vp_t = self.opponent_utility_history[:-1]  # current utility, opponent
-            vp_tminus = self.opponent_utility_history[:-2]  # previous utility, opponent
-            if state.step > 1:
-                alpha = math.log10(math.pow((state.step / state.step - 1), ((vp_max - vp_t) / (vp_max - vp_tminus))))  # equation 8 Zhang et al.
+            vp_t = self.opponent_utility_history[-1]  # current utility, opponent
+            vp_tminus = self.opponent_utility_history[-2]  # previous utility, opponent
 
-            return alpha
+            #alpha = math.log( vp_max - vp_t/vp_max - vp_tminus, base= state.step/(state.step - 1) )
+            alpha =  (math.log(vp_max - vp_t) - math.log(vp_max - vp_tminus) ) / math.log( state.step / (state.step - 1)) # equation 8 Zhang et al. 
+            if alpha !=0:
+                return alpha
+            else:
+                raise ValueError("Null alpha value")
+
 
         def non_linear_correlation(reservation_value):
             beta = fitted_beta(reservation_value)
@@ -260,6 +278,11 @@ class Group1(SAONegotiator):
             if denominator != 0:
                 return np.dot(normalized_fitted_offers, normalized_history_offers) / denominator
             else:
+                print(f"Beta: {beta}")
+                print(f"RV: {reservation_value}")
+                print(f"Denominator: {denominator}")
+                print(f"Norm Offer fitted: {normalized_fitted_offers}")
+                print(f"Norm Offer history: {normalized_history_offers}")
                 raise ValueError("Null correlation denominator")
 
         # Take random reservation values in the detecting cells
