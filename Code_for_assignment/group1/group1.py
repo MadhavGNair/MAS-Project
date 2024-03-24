@@ -38,6 +38,7 @@ class Group1(SAONegotiator):
     opponent_rv_lower_bound = float()
     detecting_cells_bounds = list()
     detecting_cells_prob = np.array
+    bid_history = list()
 
     def on_preferences_changed(self, changes):
         """
@@ -59,35 +60,12 @@ class Group1(SAONegotiator):
             if self.ufun(_) > self.ufun.reserved_value
         ]
 
-        rational_outcomes_copy = self.rational_outcomes.copy()
-
-        # from rational_outcomes, select pareto optimal outcomes using the multi-layer pareto strategy
-        # the strategy is to set a threshold of pseudo-pareto outcomes. If the initial layer does not have
-        # threshold amount of outcomes, removes that layer and calculate the next best pareto outcomes,
-        # (hence pseudo), until the threshold is reached. Set threshold to 0 to get first frontier.
-        # ISSUE: WHAT IF PARETO COUNT EXCEEDS THE TOTAL NUMBER OF BIDS?
-        pareto_count = 5
-        self.pareto_utilities = list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[0])
-        self.pareto_indices = list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[1])
-        # sort indices in descending order to avoid shrinking array issue
-        self.pareto_indices = sorted(self.pareto_indices, reverse=True)
-        while len(self.pareto_utilities) < pareto_count:
-            # remove the pareto outcomes from rational outcomes
-            for p_idx in self.pareto_indices:
-                del self.rational_outcomes[p_idx]
-            # recompute new pareto layer
-            self.pareto_utilities.extend(list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[0]))
-            self.pareto_indices.extend(list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[1]))
-
-        # sort pareto_utilities and pareto_indices in descending order
-        combined_pareto = list(zip(self.pareto_utilities, self.pareto_indices))
-        self.pareto_outcomes = sorted(combined_pareto, key=lambda x: x[0][0], reverse=True)
+        # initialize the list of pareto outcomes
+        self.get_pareto_outcomes()
 
         # calculate and store the Nash points
-        # ISSUE: WORKS FINE FOR ASSIGNMENT A, BUT NOT B, B SHOWS KALAI INSTEAD OF NASH POINT
-        # POSSIBLE PROBLEM MIGHT BE RESERVATION VALUES NOT BEING TAKEN INTO ACCOUNT
         self.nash_outcomes = nash_points([self.ufun, self.opponent_ufun],
-                                         pareto_frontier([self.ufun, self.opponent_ufun], rational_outcomes_copy)[
+                                         pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes.copy())[
                                              0])[0][0]
 
         ### OPPONENT MODELLING INITIALIZATION ###
@@ -161,7 +139,7 @@ class Group1(SAONegotiator):
 
         # If it's not acceptable, determine the counteroffer in the bidding_strategy
         return SAOResponse(ResponseType.REJECT_OFFER,
-                           self.bidding_strategy(state, concession_threshold, current_phase))
+                           self.bidding_strategy(state, concession_threshold))
 
     def acceptance_strategy(self, state: SAOState, concession_threshold) -> bool:
         """
@@ -201,6 +179,9 @@ class Group1(SAONegotiator):
         estimate off.
         One caveat is that, if we have the final bid, in the last few steps (last 5%), we will bid bids that are slightly
         above the opponent's reservation estimate, but gives us the highest utility.
+        Once a bid has been made, it is removed from the list of bids so that it is not offered again. However, once all
+        possible bids have been made, and no agreement has been reached, the pareto frontier is recomputed and bids are
+        recycled.
 
         Args:
             state (SAOState): the `SAOState` containing the offer from your partner (None if you are just starting the negotiation)
@@ -214,6 +195,9 @@ class Group1(SAONegotiator):
         epsilon = 0.05
         # this threshold defines the final number of bids where stubborn strategy is implemented
         final_bid_threshold = int(0.05 * self.nmi.n_steps) if self.nmi.n_steps > 100 else 5
+        # check if pareto outcomes is empty, if so re-initialize the list
+        if len(self.pareto_outcomes) == 0:
+            self.get_pareto_outcomes()
         # compute all possible bids given the criteria for 'good' bids
         possible_bids = [bids for bids in self.pareto_outcomes if bids[0][0] >= self.nash_outcomes[0] and
                          bids[0][0] > self.ufun.reserved_value and bids[0][1] > self.partner_reserved_value and
@@ -221,15 +205,20 @@ class Group1(SAONegotiator):
 
         # in the rare case that there are no bids that satisfy the above conditions, bid the best bid for us
         if len(possible_bids) == 0:
-            return self.rational_outcomes[max(self.pareto_outcomes, key=lambda x:x[0][0])[1]]
+            bid_idx = self.rational_outcomes[max(self.pareto_outcomes, key=lambda x:x[0][0])[1]]
+            self.pareto_outcomes = [bid for bid in self.pareto_outcomes if self.pareto_outcomes[1] != bid_idx]
+            return bid_idx
         # if we have final bid, and the final steps are reached, bid the best offers
         elif self.opponent_ends == False and state.step >= final_bid_threshold:
             best_offers = [offer for offer in self.rational_outcomes if offer[0][1] > self.partner_reserved_value]
-            return self.rational_outcomes[min(best_offers, key=lambda x: x[0][0])[1]]
+            bid_idx = self.rational_outcomes[max(best_offers, key=lambda x: x[0][0])[1]]
+            self.pareto_outcomes = [bid for bid in self.pareto_outcomes if self.pareto_outcomes[1] != bid_idx]
+            return bid_idx
         # if in any other scenario, bid the lowest bid for opponent
-        # IF PERFORMANCE IS BAD, MAYBE KEEP TRACK OF OFFERED BIDS AND DONT OFFER THEM AGAIN
         elif epsilon <= random.random():
-            return self.rational_outcomes[min(self.pareto_outcomes, key=lambda x: x[0][1])[1]]
+            bid_idx = self.rational_outcomes[min(self.pareto_outcomes, key=lambda x: x[0][1])[1]]
+            self.pareto_outcomes = [bid for bid in self.pareto_outcomes if self.pareto_outcomes[1] != bid_idx]
+            return bid_idx
         return self.rational_outcomes[random.choice(possible_bids)[1]]
 
     def update_partner_reserved_value(self, state: SAOState) -> None:
@@ -329,6 +318,7 @@ class Group1(SAONegotiator):
         Args:
             state (SAOState): the `SAOState` containing the offer from your partner (None if you are just starting the negotiation)
                    and other information about the negotiation (e.g. current step, relative time, etc.).
+            current_phase: the current phase of negotiation
         """
         m = self.ufun.reserved_value
         if current_phase == 1:
@@ -404,6 +394,29 @@ class Group1(SAONegotiator):
             return 2
         else:
             return 3
+
+    def get_pareto_outcomes(self):
+        # from rational_outcomes, select pareto optimal outcomes using the multi-layer pareto strategy
+        # the strategy is to set a threshold of pseudo-pareto outcomes. If the initial layer does not have
+        # threshold amount of outcomes, removes that layer and calculate the next best pareto outcomes,
+        # (hence pseudo), until the threshold is reached. Set threshold to 0 to get first frontier.
+        # ISSUE: WHAT IF PARETO COUNT EXCEEDS THE TOTAL NUMBER OF BIDS?
+        pareto_count = 5
+        self.pareto_utilities = list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[0])
+        self.pareto_indices = list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[1])
+        # sort indices in descending order to avoid shrinking array issue
+        self.pareto_indices = sorted(self.pareto_indices, reverse=True)
+        while len(self.pareto_utilities) < pareto_count:
+            # remove the pareto outcomes from rational outcomes
+            for p_idx in self.pareto_indices:
+                del self.rational_outcomes[p_idx]
+            # recompute new pareto layer
+            self.pareto_utilities.extend(list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[0]))
+            self.pareto_indices.extend(list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[1]))
+
+        # sort pareto_utilities and pareto_indices in descending order
+        combined_pareto = list(zip(self.pareto_utilities, self.pareto_indices))
+        self.pareto_outcomes = sorted(combined_pareto, key=lambda x: x[0][0], reverse=True)
 
 
 # if you want to do a very small test, use the parameter small=True here. Otherwise, you can use the default parameters.
