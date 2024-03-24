@@ -163,12 +163,10 @@ class Group1(SAONegotiator):
             # if offer is above or equal to Nash point, our reservation value and our concession threshold, accept
             if offer is not None and offer_utility >= self.nash_outcomes[0]\
                     and offer_utility >= self.ufun.reserved_value and offer_utility >= concession_threshold:
-                print("WE END SO ACCEPTED ", offer_utility)
                 return True
         else:
             # since we are at disadvantage, simply accept valid offers above reservation value and concession threshold
             if offer is not None and offer_utility >= self.ufun.reserved_value and offer_utility >= concession_threshold:
-                print("WE DONT END SO WE ACCEPTED WITH UTILITY ", offer_utility)
                 return True
         return False
 
