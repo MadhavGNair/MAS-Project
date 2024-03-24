@@ -30,18 +30,19 @@ class Group1(SAONegotiator):
     opponent_ends = bool
     acceptance_concession_phase = {1: (1, 0), 2: (1, 0), 3: (1, 0)}
     bidding_concession_phase    = {1: (1, 0), 2: (1, 0), 3: (1, 0)}
-
-
+    utility_history: list[float] = list()
+    differences: list[list[float]] = list()
     opp_model_started: bool  = False
-    NR_DETECTING_CELLS: int = 20
+    opponent_differences: list[list[float]] = list()
     NR_STEPS_BEFORE_OPP_MODEL: int = 10
     opponent_bid_history = list()
-    opponent_utility_history = list()
-    opponent_rv_upper_bound = float()
-    opponent_rv_lower_bound = float()
-    detecting_cells_bounds = list()
+    opponent_utility_history: list[float] = list()
+    opponent_rv_upper_bound: float = 1
+    opponent_rv_lower_bound: float = 0
+    NR_DETECTING_CELLS: int = 20
+    detecting_cells_bounds: list[float] = list()
     detecting_cells_prob = np.array
-    bid_history = list()
+    
 
     def on_preferences_changed(self, changes):
         """
@@ -118,25 +119,25 @@ class Group1(SAONegotiator):
         # Compute the current phase (first or second half of negotiation)
         current_phase = self.compute_phase(state)
 
-        # History of opponent bids and utilities
+        # Save opponent's history of bids and utilities. Update utilities differences.
         if offer is not None:
             self.opponent_bid_history.append(offer)
             self.opponent_utility_history.append(self.opponent_ufun(offer))
-            #print(self.opponent_utility_history)
 
+        if len(self.opponent_utility_history) > 1:
+            self.update_differences(differences=self.opponent_differences, utility_history=self.opponent_utility_history)
 
-        # Update reservation value (only after the opponent has given us 2 proposals)
-        if len(self.opponent_utility_history) >= self.NR_STEPS_BEFORE_OPP_MODEL and not np.all(np.isclose(self.opponent_utility_history, np.mean(self.opponent_utility_history))):
+        # Update reservation value (only if the time criterion is satisfied)
+        if len(self.opponent_differences) > 1:
+            time_criterion = self.compute_time_criterion(differences=self.opponent_differences)
+        #if len(self.opponent_utility_history) >= self.NR_STEPS_BEFORE_OPP_MODEL and not np.all(np.isclose(self.opponent_utility_history, np.mean(self.opponent_utility_history))):
+        if len(self.opponent_utility_history) >= self.NR_STEPS_BEFORE_OPP_MODEL and time_criterion > 0.1:
             # Save starting step of the opponent modelling
             if not self.opp_model_started:
                 self.opp_model_first_step = state.step
                 self.opp_model_started = True
-                print("OPP MODEL STARTED")
-                print(self.opponent_utility_history)
+                print(f"Opponent modelling started in step {state.step} with time criterion {time_criterion}")
             self.update_partner_reserved_value(state)
-        else:
-            print("Todos los bid tienen la misma utilidad")
-            print(self.opponent_utility_history)
 
         # if there are no outcomes (should in theory never happen)
         if self.ufun is None:
@@ -150,9 +151,12 @@ class Group1(SAONegotiator):
 
         concession_threshold = self.bidding_curve(state, current_phase)
 
-        # If it's not acceptable, determine the counteroffer in the bidding_strategy
-        return SAOResponse(ResponseType.REJECT_OFFER,
-                           self.bidding_strategy(state, concession_threshold))
+        # If it's not acceptable, determine the counteroffer in the bidding_strategy and return it. Update self utility differences.
+        bid = self.bidding_strategy(state, concession_threshold)
+        self.utility_history.append(self.ufun(bid))
+        if len(self.utility_history) > 1:
+            self.update_differences(differences=self.differences, utility_history=self.utility_history)
+        return SAOResponse(ResponseType.REJECT_OFFER, bid)
 
     def acceptance_strategy(self, state: SAOState, concession_threshold) -> bool:
         """
@@ -233,6 +237,40 @@ class Group1(SAONegotiator):
             self.pareto_outcomes = [bid for bid in self.pareto_outcomes if bid[1] != bid_idx]
             return self.rational_outcomes[bid_idx]
         return self.rational_outcomes[random.choice(possible_bids)[1]]
+
+    def update_differences(self, differences: list[list[float]], utility_history: list[float]) -> None:
+        assert len(utility_history) > 1
+        for k in range(len(utility_history)-1):
+            if k == len(utility_history)-2: # Once per update (at the last step) we create the list with the new order of differences
+                if k==0:
+                    differences.append([utility_history[1]-utility_history[0]])
+                else:
+                    differences.append([differences[k-1][-1]-differences[k-1][-2]])
+            else:
+                if k==0:
+                    differences[k].append(utility_history[-1]-utility_history[-2])
+                else:
+                    differences[k].append(differences[k-1][-1]-differences[k-1][-2])
+
+    def compute_time_criterion(self, differences: list[list[float]]):
+        assert len(differences) > 1
+        D = np.empty(len(differences))
+        sum_differences = list()
+        for k in range(len(differences)):
+            positive_differences = np.array(differences[k])[np.greater(differences[k], np.zeros(len(differences[k])))]
+            negative_differences = np.array(differences[k])[np.less(differences[k], np.zeros(len(differences[k])))]
+            sum_differences.append({"pos": np.sum(positive_differences), "neg": np.sum(negative_differences)})
+            if len(positive_differences)>0 and len(negative_differences)>0:
+                D[k] = abs((sum_differences[k]["pos"]/len(positive_differences))+(sum_differences[k]["neg"]/len(negative_differences))) / max([abs(sum_differences[k]["pos"]/len(positive_differences)), abs(sum_differences[k]["neg"]/len(negative_differences))])
+            elif len(positive_differences) == 0 and len(negative_differences)==0:
+                D[k] = 0
+            else:
+                D[k] = 1
+        max_sum_differences = [max([sum_differences[k]["pos"], sum_differences[k]["neg"]]) for k in range(len(differences))]
+        w = np.array([max_sum_differences[k]/np.sum(max_sum_differences) if np.sum(max_sum_differences)>0 else 0 for k in range(len(differences))])
+        assert len(D) == len(D[np.invert(np.isnan(D))])
+        return np.dot(w, D)
+             
 
     def update_partner_reserved_value(self, state: SAOState) -> None:
         """This is one of the functions you can implement.
