@@ -30,8 +30,11 @@ class Group1(SAONegotiator):
     opponent_ends = bool
     acceptance_concession_phase = {1: (1, 0), 2: (1, 0), 3: (1, 0)}
     bidding_concession_phase    = {1: (1, 0), 2: (1, 0), 3: (1, 0)}
-    NR_DETECTING_CELLS = 20
-    NR_STEPS_BEFORE_OPP_MODEL = 10
+
+
+    opp_model_started: bool  = False
+    NR_DETECTING_CELLS: int = 20
+    NR_STEPS_BEFORE_OPP_MODEL: int = 10
     opponent_bid_history = list()
     opponent_utility_history = list()
     opponent_rv_upper_bound = float()
@@ -121,9 +124,19 @@ class Group1(SAONegotiator):
             self.opponent_utility_history.append(self.opponent_ufun(offer))
             #print(self.opponent_utility_history)
 
+
         # Update reservation value (only after the opponent has given us 2 proposals)
-        if len(self.opponent_utility_history) >= self.NR_STEPS_BEFORE_OPP_MODEL:
+        if len(self.opponent_utility_history) >= self.NR_STEPS_BEFORE_OPP_MODEL and not np.all(np.isclose(self.opponent_utility_history, np.mean(self.opponent_utility_history))):
+            # Save starting step of the opponent modelling
+            if not self.opp_model_started:
+                self.opp_model_first_step = state.step
+                self.opp_model_started = True
+                print("OPP MODEL STARTED")
+                print(self.opponent_utility_history)
             self.update_partner_reserved_value(state)
+        else:
+            print("Todos los bid tienen la misma utilidad")
+            print(self.opponent_utility_history)
 
         # if there are no outcomes (should in theory never happen)
         if self.ufun is None:
@@ -234,7 +247,7 @@ class Group1(SAONegotiator):
         assert self.ufun and self.opponent_ufun
 
         # Initialization part 2
-        if len(self.opponent_utility_history) == self.NR_STEPS_BEFORE_OPP_MODEL:
+        if state.step == self.opp_model_first_step:
             # Update upper bound with first bid information
             if self.opponent_rv_upper_bound >= self.opponent_utility_history[0]:
                 self.opponent_rv_upper_bound = self.opponent_utility_history[0]-self.opponent_utility_history[0]/self.NR_DETECTING_CELLS
