@@ -218,14 +218,14 @@ class Group1(SAONegotiator):
         possible_bids = [bids for bids in self.pareto_outcomes if bids[0][0] >= self.nash_outcomes[0] and
                          bids[0][0] > self.ufun.reserved_value and bids[0][1] > self.partner_reserved_value and
                          bids[0][0] > concession_threshold]
-
+        
         # in the rare case that there are no bids that satisfy the above conditions, bid the best bid for us
         if len(possible_bids) == 0:
             return self.rational_outcomes[max(self.pareto_outcomes, key=lambda x:x[0][0])[1]]
         # if we have final bid, and the final steps are reached, bid the best offers
         elif self.opponent_ends == False and state.step >= final_bid_threshold:
             best_offers = [offer for offer in self.rational_outcomes if offer[0][1] > self.partner_reserved_value]
-            return self.rational_outcomes[min(best_offers, key=lambda x: x[0][0])[1]]
+            return self.rational_outcomes[max(best_offers, key=lambda x: x[0][0])[1]]
         # if in any other scenario, bid the lowest bid for opponent
         # IF PERFORMANCE IS BAD, MAYBE KEEP TRACK OF OFFERED BIDS AND DONT OFFER THEM AGAIN
         elif epsilon <= random.random():
