@@ -163,10 +163,12 @@ class Group1(SAONegotiator):
             # if offer is above or equal to Nash point, our reservation value and our concession threshold, accept
             if offer is not None and offer_utility >= self.nash_outcomes[0]\
                     and offer_utility >= self.ufun.reserved_value and offer_utility >= concession_threshold:
+                print("WE END SO ACCEPTED ", offer_utility)
                 return True
         else:
             # since we are at disadvantage, simply accept valid offers above reservation value and concession threshold
             if offer is not None and offer_utility >= self.ufun.reserved_value and offer_utility >= concession_threshold:
+                print("WE DONT END SO WE ACCEPTED WITH UTILITY ", offer_utility)
                 return True
         return False
 
@@ -205,20 +207,20 @@ class Group1(SAONegotiator):
 
         # in the rare case that there are no bids that satisfy the above conditions, bid the best bid for us
         if len(possible_bids) == 0:
-            bid_idx = self.rational_outcomes[max(self.pareto_outcomes, key=lambda x:x[0][0])[1]]
-            self.pareto_outcomes = [bid for bid in self.pareto_outcomes if self.pareto_outcomes[1] != bid_idx]
-            return bid_idx
+            bid_idx = max(self.pareto_outcomes, key=lambda x:x[0][0])[1]
+            self.pareto_outcomes = [bid for bid in self.pareto_outcomes if bid[1] != bid_idx]
+            return self.rational_outcomes[bid_idx]
         # if we have final bid, and the final steps are reached, bid the best offers
         elif self.opponent_ends == False and state.step >= final_bid_threshold:
-            best_offers = [offer for offer in self.rational_outcomes if offer[0][1] > self.partner_reserved_value]
-            bid_idx = self.rational_outcomes[max(best_offers, key=lambda x: x[0][0])[1]]
-            self.pareto_outcomes = [bid for bid in self.pareto_outcomes if self.pareto_outcomes[1] != bid_idx]
-            return bid_idx
+            best_offers = [offer for offer in self.pareto_outcomes if offer[0][1] > self.partner_reserved_value]
+            bid_idx = max(best_offers, key=lambda x: x[0][0])[1]
+            # self.pareto_outcomes = [bid for bid in self.pareto_outcomes if bid[1] != bid_idx]
+            return self.rational_outcomes[bid_idx]
         # if in any other scenario, bid the lowest bid for opponent
         elif epsilon <= random.random():
-            bid_idx = self.rational_outcomes[min(self.pareto_outcomes, key=lambda x: x[0][1])[1]]
-            self.pareto_outcomes = [bid for bid in self.pareto_outcomes if self.pareto_outcomes[1] != bid_idx]
-            return bid_idx
+            bid_idx = min(self.pareto_outcomes, key=lambda x: x[0][1])[1]
+            self.pareto_outcomes = [bid for bid in self.pareto_outcomes if bid[1] != bid_idx]
+            return self.rational_outcomes[bid_idx]
         return self.rational_outcomes[random.choice(possible_bids)[1]]
 
     def update_partner_reserved_value(self, state: SAOState) -> None:
