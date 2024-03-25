@@ -32,7 +32,9 @@ class Group1(SAONegotiator):
     bidding_concession_phase    = {1: (1, 0), 2: (1, 0), 3: (1, 0)}
     utility_history: list[float] = list()
     differences: list[list[float]] = list()
+    verbosity_opponent_modelling: bool = False
     opp_model_started: bool  = False
+    nr_opponent_rv_updates: int = 0
     opponent_differences: list[list[float]] = list()
     NR_STEPS_BEFORE_OPP_MODEL: int = 10
     opponent_bid_history = list()
@@ -123,28 +125,27 @@ class Group1(SAONegotiator):
         if offer is not None:
             self.opponent_bid_history.append(offer)
             self.opponent_utility_history.append(self.opponent_ufun(offer))
-
         if len(self.opponent_utility_history) > 1:
             self.update_differences(differences=self.opponent_differences, utility_history=self.opponent_utility_history)
 
-        # Update reservation value (only if the time criterion is satisfied)
+        # Compute time-dependency criterion
         if len(self.opponent_differences) > 1:
             time_criterion = self.compute_time_criterion(differences=self.opponent_differences)
-        #if len(self.opponent_utility_history) >= self.NR_STEPS_BEFORE_OPP_MODEL and not np.all(np.isclose(self.opponent_utility_history, np.mean(self.opponent_utility_history))):
-        if len(self.opponent_utility_history) >= self.NR_STEPS_BEFORE_OPP_MODEL and time_criterion > 0.1:
-            # Save starting step of the opponent modelling
+            # Start the opponent modelling when the time-dependency criterion is satisfied and opponent has proposed at least 3 different bids.
             if not self.opp_model_started:
-                self.opp_model_first_step = state.step
-                self.opp_model_started = True
-                print(f"Opponent modelling started in step {state.step} with time criterion {time_criterion}")
+                if time_criterion > .1 and len(np.unique(self.opponent_utility_history))>2:
+                    self.opp_model_first_step = state.step
+                    self.opp_model_started = True
+                    if self.verbosity_opponent_modelling:
+                        print(f"(Opponent ends={self.opponent_ends}) Opponent modelling started in step {state.step} (Rel time = {state.relative_time}) with time criterion {time_criterion}")
+        if self.opp_model_started:
             self.update_partner_reserved_value(state)
 
         # if there are no outcomes (should in theory never happen)
         if self.ufun is None:
             return SAOResponse(ResponseType.END_NEGOTIATION, None)
 
-        # Determine the acceptability of the offer in the acceptance_strategy
-        # change the concession threshold to the curve function when decided
+        # Determine the acceptability of the offer in the acceptance_strategy. Change the concession threshold to the curve function when decided
         concession_threshold = self.acceptance_curve(state, current_phase)
         if self.acceptance_strategy(state, concession_threshold):
             return SAOResponse(ResponseType.ACCEPT_OFFER, offer)
@@ -252,7 +253,7 @@ class Group1(SAONegotiator):
                 else:
                     differences[k].append(differences[k-1][-1]-differences[k-1][-2])
 
-    def compute_time_criterion(self, differences: list[list[float]]):
+    def compute_time_criterion(self, differences: list[list[float]]) -> float:
         assert len(differences) > 1
         D = np.empty(len(differences))
         sum_differences = list()
@@ -300,8 +301,8 @@ class Group1(SAONegotiator):
             return self.opponent_utility_history[0] + (reservation_value - self.opponent_utility_history[0]) * pow(t/self.nmi.n_steps, beta)
 
         def fitted_beta(reservation_value):
-            p_i = np.log([(self.opponent_utility_history[0]-self.opponent_utility_history[t]) for t in range(1, len(self.opponent_utility_history))]) -np.log([(self.opponent_utility_history[0] - reservation_value) for t in range(1, len(self.opponent_utility_history))])
-            #p_i = np.log([(self.opponent_utility_history[0] - self.opponent_utility_history[t])/(self.opponent_utility_history[0] - reservation_value) for t in range(1, len(self.opponent_utility_history))])
+            #p_i = np.log([(self.opponent_utility_history[0]-self.opponent_utility_history[t]) for t in range(1, len(self.opponent_utility_history))]) -np.log([(self.opponent_utility_history[0] - reservation_value) for t in range(1, len(self.opponent_utility_history))])
+            p_i = np.log([(self.opponent_utility_history[0] - self.opponent_utility_history[t])/(self.opponent_utility_history[0] - reservation_value) if abs(self.opponent_utility_history[0] - self.opponent_utility_history[t])>1e-3 else 1e-3 for t in range(1, len(self.opponent_utility_history))])
             t_i = np.log([t/self.nmi.n_steps for t in range(1, len(self.opponent_utility_history))])
             beta = np.dot(p_i, t_i)/np.dot(t_i, t_i)
             if beta == float("inf"):
@@ -310,16 +311,27 @@ class Group1(SAONegotiator):
                 return beta
 
         def fitted_alpha(reservation_value):
-            vp_max = max(self.opponent_utility_history)  # maximum utility achieved by the opponent
-            vp_t = self.opponent_utility_history[-1]  # current utility, opponent
-            vp_tminus = self.opponent_utility_history[-2]  # previous utility, opponent
-
-            #alpha = math.log( vp_max - vp_t/vp_max - vp_tminus, base= state.step/(state.step - 1) )
-            alpha =  (math.log(vp_max - vp_t) - math.log(vp_max - vp_tminus) ) / math.log( state.step / (state.step - 1)) # equation 8 Zhang et al.
+            max_utility = max(self.opponent_utility_history)  # maximum utility achieved by the opponent
+            current_utility = self.opponent_utility_history[-1]  # current utility, opponent
+            current_step = state.step
+            # Take the last utility different from the current and the corresponding time step
+            for k in range(2, len(self.opponent_utility_history)):
+                previous_utility = self.opponent_utility_history[-k]
+                if abs(current_utility-previous_utility)>1e-10:
+                    previous_step = current_step - k+1
+                    break
+            alpha =  math.log((max_utility - current_utility)/(max_utility - previous_utility)) / math.log( current_step / previous_step)
+            #alpha =  (math.log(max_utility - current_utility) - math.log(max_utility - previous_utility) ) / math.log( current_step / previous_step) # equation 8 Zhang et al.
             if alpha !=0:
-                return alpha
+                if alpha>100:
+                    if self.verbosity_opponent_modelling: print("Alpha adjusted to 100")
+                    return 100
+                else:
+                    return alpha
             else:
-                raise ValueError("Null alpha value")
+                if self.verbosity_opponent_modelling: 
+                    print(f"Null alpha in step {state.step} because the log argument is {(max_utility - current_utility)/(max_utility - previous_utility)}")
+                return 0.001
 
 
         def non_linear_correlation(reservation_value):
@@ -331,18 +343,19 @@ class Group1(SAONegotiator):
             if denominator != 0:
                 return np.dot(normalized_fitted_offers, normalized_history_offers) / denominator
             else:
-                print(f"Beta: {beta}")
-                print(f"RV: {reservation_value}")
-                print(f"Denominator: {denominator}")
-                print(f"Norm Offer fitted: {normalized_fitted_offers}")
-                print(f"Norm Offer history: {normalized_history_offers}")
+                if self.verbosity_opponent_modelling:
+                    print(f"Beta: {beta}")
+                    print(f"RV: {reservation_value}")
+                    print(f"Denominator: {denominator}")
+                    print(f"Mean Norm Offer fitted: {np.mean(normalized_fitted_offers)}")
+                    print(f"Mean Norm Offer history: {np.mean(normalized_history_offers)}")
                 raise ValueError("Null correlation denominator")
 
         # Take random reservation values in the detecting cells
         random_reservation_values = [random.uniform(self.detecting_cells_bounds[k], self.detecting_cells_bounds[k+1]) for k in range(self.NR_DETECTING_CELLS)]
 
         # Compute the fitted curves and the non-linear correlation with history utilities
-        likelihoods = [non_linear_correlation(rv)**2 for rv in random_reservation_values]
+        likelihoods = [non_linear_correlation(rv) for rv in random_reservation_values]
 
         # Bayesian update of detection cells probabilities
         prior_prob = self.detecting_cells_prob
@@ -353,6 +366,15 @@ class Group1(SAONegotiator):
 
         # Selecting a reservation value from detecting cells probability distribution: the upper bound of the cell with max prob.
         self.partner_reserved_value = self.detecting_cells_bounds[np.argmax(self.detecting_cells_prob) + 1]
+        self.nr_opponent_rv_updates += 1
+
+        def compute_expected_reserved_value():
+            return np.dot(self.detecting_cells_prob, [(self.detecting_cells_bounds[k+1]-self.detecting_cells_bounds[k])/2 for k in range(len(self.detecting_cells_prob))])
+
+        if self.verbosity_opponent_modelling and state.step % 10 == 0:
+            print(f"(Opponent ends={self.opponent_ends}) Partner max predicted reserved value at step {state.step} (rel time={state.relative_time}) = {self.partner_reserved_value}")
+            print(f"(Opponent ends={self.opponent_ends}) Partner avg predicted reserved value at step {state.step} (rel time={state.relative_time}) = {compute_expected_reserved_value()}")
+            print(f"Total nr of updates = {self.nr_opponent_rv_updates}")
 
         # update rational_outcomes by removing the outcomes that are below the reservation value of the opponent
         # Watch out: if the reserved value decreases, this will not add any outcomes.
