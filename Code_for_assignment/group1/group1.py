@@ -124,7 +124,10 @@ class Group1(SAONegotiator):
         # Save opponent's history of bids and utilities. Update utilities differences.
         if offer is not None:
             self.opponent_bid_history.append(offer)
-            self.opponent_utility_history.append(self.opponent_ufun(offer))
+            if len(self.opponent_utility_history) > 0 and self.opponent_ufun(offer) > self.opponent_utility_history[0]:
+                self.opponent_utility_history.append(self.opponent_utility_history[-1])
+            else:
+                self.opponent_utility_history.append(self.opponent_ufun(offer))
         if len(self.opponent_utility_history) > 1:
             self.update_differences(differences=self.opponent_differences, utility_history=self.opponent_utility_history)
 
