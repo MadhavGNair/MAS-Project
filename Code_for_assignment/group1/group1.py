@@ -133,7 +133,7 @@ class Group1(SAONegotiator):
             time_criterion = self.compute_time_criterion(differences=self.opponent_differences)
             # Start the opponent modelling when the time-dependency criterion is satisfied and opponent has proposed at least 3 different bids.
             if not self.opp_model_started:
-                if time_criterion > .1 and len(np.unique(self.opponent_utility_history))>2:
+                if time_criterion > 0.1 and len(np.unique(self.opponent_utility_history)) > 2:
                     self.opp_model_first_step = state.step
                     self.opp_model_started = True
                     if self.verbosity_opponent_modelling:
@@ -212,7 +212,7 @@ class Group1(SAONegotiator):
         # define epsilon to be the chance of random bid being offered
         epsilon = 0.05
         # this threshold defines the final number of bids where stubborn strategy is implemented
-        final_bid_threshold = int(0.05 * self.nmi.n_steps) if self.nmi.n_steps > 100 else 5
+        final_bid_threshold = int(0.10 * self.nmi.n_steps) if self.nmi.n_steps > 100 else 10
         # check if pareto outcomes is empty, if so re-initialize the list
         if len(self.pareto_outcomes) == 0:
             self.get_pareto_outcomes()
@@ -473,7 +473,6 @@ class Group1(SAONegotiator):
         # the strategy is to set a threshold of pseudo-pareto outcomes. If the initial layer does not have
         # threshold amount of outcomes, removes that layer and calculate the next best pareto outcomes,
         # (hence pseudo), until the threshold is reached. Set threshold to 0 to get first frontier.
-        # ISSUE: WHAT IF PARETO COUNT EXCEEDS THE TOTAL NUMBER OF BIDS?
         pareto_count = 5
         self.pareto_utilities = list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[0])
         self.pareto_indices = list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[1])
