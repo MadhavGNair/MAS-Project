@@ -233,7 +233,7 @@ class Group1(SAONegotiator):
             return self.rational_outcomes[bid_idx]
         # if in any other scenario, bid the lowest bid for opponent
         else:
-            bid_idx = max(possible_bids, key=lambda x: x[0][1])[1]
+            bid_idx = max(possible_bids, key=lambda x: x[0][0])[1]
             self.pareto_outcomes = [bid for bid in self.pareto_outcomes if bid[1] != bid_idx]
             return self.rational_outcomes[bid_idx]
 
@@ -495,4 +495,4 @@ class Group1(SAONegotiator):
 if __name__ == "__main__":
     from helpers.runner import run_a_tournament
 
-    run_a_tournament(Group1, small=True)
+    run_a_tournament(Group1, small=False, debug=True)
