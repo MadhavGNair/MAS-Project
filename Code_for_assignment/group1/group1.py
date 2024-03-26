@@ -228,13 +228,13 @@ class Group1(SAONegotiator):
             return self.rational_outcomes[bid_idx]
         # if we have final bid, and the final steps are reached, bid the best offers
         elif self.opponent_ends == False and state.step >= final_bid_threshold:
-            best_offers = [offer for offer in self.pareto_outcomes if offer[0][1] > self.partner_reserved_value]
+            best_offers = [offer for offer in possible_bids if offer[0][1] > self.partner_reserved_value]
             bid_idx = max(best_offers, key=lambda x: x[0][0])[1]
-            # self.pareto_outcomes = [bid for bid in self.pareto_outcomes if bid[1] != bid_idx]
+            self.pareto_outcomes = [bid for bid in self.pareto_outcomes if bid[1] != bid_idx]
             return self.rational_outcomes[bid_idx]
         # if in any other scenario, bid the lowest bid for opponent
         elif epsilon <= random.random():
-            bid_idx = min(self.pareto_outcomes, key=lambda x: x[0][1])[1]
+            bid_idx = min(possible_bids, key=lambda x: x[0][1])[1]
             self.pareto_outcomes = [bid for bid in self.pareto_outcomes if bid[1] != bid_idx]
             return self.rational_outcomes[bid_idx]
         return self.rational_outcomes[random.choice(possible_bids)[1]]
