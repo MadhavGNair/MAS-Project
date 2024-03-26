@@ -54,7 +54,7 @@ def run_a_tournament(
     )
     if small:
         anl2024_tournament(
-            competitors=tuple([TestedNegotiator, MiCRO]),
+            competitors=tuple([TestedNegotiator, Conceder]),
             n_scenarios=1,
             n_outcomes=n_outcomes,
             n_repetitions=1,

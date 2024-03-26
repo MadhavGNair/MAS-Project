@@ -44,6 +44,7 @@ class Group1(SAONegotiator):
     NR_DETECTING_CELLS: int = 20
     detecting_cells_bounds: list[float] = list()
     detecting_cells_prob = np.array
+    phase_count = {'First': 0, 'Second': 0, 'Third': 0}
     
 
     def on_preferences_changed(self, changes):
@@ -68,6 +69,7 @@ class Group1(SAONegotiator):
 
         # initialize the list of pareto outcomes
         self.get_pareto_outcomes()
+        print(self.pareto_outcomes)
 
         # calculate and store the Nash points
         self.nash_outcomes = nash_points([self.ufun, self.opponent_ufun],
@@ -110,6 +112,9 @@ class Group1(SAONegotiator):
             - If this is `None`, you are starting the negotiation now (no offers yet).
         """
         offer = state.current_offer
+
+        print()
+        print(self.phase_count)
 
         # Compute who gets the final bid (only on first step)
         if state.step == 0:
@@ -208,13 +213,11 @@ class Group1(SAONegotiator):
 
         Returns: The counteroffer as Outcome.
         """
-
-        # define epsilon to be the chance of random bid being offered
-        epsilon = 0.05
         # this threshold defines the final number of bids where stubborn strategy is implemented
         final_bid_threshold = int(0.10 * self.nmi.n_steps) if self.nmi.n_steps > 100 else 10
         # check if pareto outcomes is empty, if so re-initialize the list
         if len(self.pareto_outcomes) == 0:
+            print("UPDATING PARETO")
             self.get_pareto_outcomes()
         # compute all possible bids given the criteria for 'good' bids
         possible_bids = [bids for bids in self.pareto_outcomes if bids[0][0] >= self.nash_outcomes[0] and
@@ -223,21 +226,23 @@ class Group1(SAONegotiator):
 
         # in the rare case that there are no bids that satisfy the above conditions, bid the best bid for us
         if len(possible_bids) == 0:
-            bid_idx = max(self.pareto_outcomes, key=lambda x:x[0][0])[1]
-            self.pareto_outcomes = [bid for bid in self.pareto_outcomes if bid[1] != bid_idx]
+            self.phase_count['First'] += 1
+            bid_idx = self.pareto_outcomes[0][1]
+            # self.pareto_outcomes = [bid for bid in self.pareto_outcomes if bid[1] != bid_idx]
             return self.rational_outcomes[bid_idx]
         # if we have final bid, and the final steps are reached, bid the best offers
         elif self.opponent_ends == False and state.step >= final_bid_threshold:
+            self.phase_count['Second'] += 1
             best_offers = [offer for offer in possible_bids if offer[0][1] > self.partner_reserved_value]
             bid_idx = max(best_offers, key=lambda x: x[0][0])[1]
             # self.pareto_outcomes = [bid for bid in self.pareto_outcomes if bid[1] != bid_idx]
             return self.rational_outcomes[bid_idx]
         # if in any other scenario, bid the lowest bid for opponent
-        elif epsilon <= random.random():
-            bid_idx = min(possible_bids, key=lambda x: x[0][1])[1]
+        else:
+            self.phase_count['Third'] += 1
+            bid_idx = max(possible_bids, key=lambda x: x[0][1])[1]
             self.pareto_outcomes = [bid for bid in self.pareto_outcomes if bid[1] != bid_idx]
             return self.rational_outcomes[bid_idx]
-        return self.rational_outcomes[random.choice(possible_bids)[1]]
 
     def update_differences(self, differences: list[list[float]], utility_history: list[float]) -> None:
         assert len(utility_history) > 1
@@ -478,10 +483,10 @@ class Group1(SAONegotiator):
         self.pareto_indices = list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[1])
         # sort indices in descending order to avoid shrinking array issue
         self.pareto_indices = sorted(self.pareto_indices, reverse=True)
+
         while len(self.pareto_utilities) < pareto_count:
             # remove the pareto outcomes from rational outcomes
-            for p_idx in self.pareto_indices:
-                del self.rational_outcomes[p_idx]
+            self.rational_outcomes = [outcome for idx, outcome in enumerate(self.rational_outcomes) if idx not in self.pareto_indices]
             # recompute new pareto layer
             self.pareto_utilities.extend(list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[0]))
             self.pareto_indices.extend(list(pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes)[1]))
