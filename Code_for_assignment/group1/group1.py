@@ -69,7 +69,6 @@ class Group1(SAONegotiator):
 
         # initialize the list of pareto outcomes
         self.get_pareto_outcomes()
-        print(self.pareto_outcomes)
 
         # calculate and store the Nash points
         self.nash_outcomes = nash_points([self.ufun, self.opponent_ufun],
@@ -112,9 +111,6 @@ class Group1(SAONegotiator):
             - If this is `None`, you are starting the negotiation now (no offers yet).
         """
         offer = state.current_offer
-
-        print()
-        print(self.phase_count)
 
         # Compute who gets the final bid (only on first step)
         if state.step == 0:
@@ -220,7 +216,6 @@ class Group1(SAONegotiator):
         final_bid_threshold = int(0.10 * self.nmi.n_steps) if self.nmi.n_steps > 100 else 10
         # check if pareto outcomes is empty, if so re-initialize the list
         if len(self.pareto_outcomes) == 0:
-            print("UPDATING PARETO")
             self.get_pareto_outcomes()
         # compute all possible bids given the criteria for 'good' bids
         possible_bids = [bids for bids in self.pareto_outcomes if bids[0][0] >= self.nash_outcomes[0] and
