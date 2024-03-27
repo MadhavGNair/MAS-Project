@@ -183,10 +183,9 @@ class Group1(SAONegotiator):
         # define two strategies for when opponent has and does not have last bid
         if not self.opponent_ends:
             # if offer is above or equal to Nash point, our reservation value and our concession threshold, accept
-            # if offer is not None and offer_utility >= self.nash_outcomes[0]\
-            #         and offer_utility >= self.ufun.reserved_value and offer_utility >= concession_threshold:
-            #     return True
-            return False
+            if offer is not None and offer_utility >= self.nash_outcomes[0]\
+                    and offer_utility >= self.ufun.reserved_value and offer_utility >= concession_threshold:
+                return True
         else:
             # since we are at disadvantage, simply accept valid offers above reservation value and concession threshold
             if offer is not None and offer_utility >= self.ufun.reserved_value and offer_utility >= concession_threshold:
