@@ -42,7 +42,7 @@ def run_a_tournament(
         DEFAULT_TOURNAMENT_PATH,
         anl2024_tournament,
     )
-    from anl.anl2024.negotiators import Conceder
+    from anl.anl2024.negotiators import Conceder, Linear, Boulware, RVFitter, NashSeeker, MiCRO
     from negmas.helpers import humanize_time, unique_name
     from rich import print
 
@@ -60,19 +60,21 @@ def run_a_tournament(
             n_repetitions=1,
             njobs=-1 if debug else 0,
             verbosity=2 if debug else 1,
-            plot_fraction=0,
+            plot_fraction=1,
             name=name,
+            self_play=False,
         ).final_scores
     else:
         anl2024_tournament(
             competitors=tuple([TestedNegotiator] + list(DEFAULT_AN2024_COMPETITORS)),
-            n_scenarios=n_scenarios,
+            n_scenarios=1,
             n_outcomes=n_outcomes,
             n_repetitions=n_repetitions,
             njobs=-1 if debug else 0,
             verbosity=2 if debug else 1,
-            plot_fraction=0,
+            plot_fraction=1,
             name=name,
+            self_play=False
         ).final_scores
     print(f"Finished in {humanize_time(time.perf_counter() - start)}")
     if name is not None:
