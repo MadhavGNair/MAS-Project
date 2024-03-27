@@ -183,9 +183,10 @@ class Group1(SAONegotiator):
         # define two strategies for when opponent has and does not have last bid
         if not self.opponent_ends:
             # if offer is above or equal to Nash point, our reservation value and our concession threshold, accept
-            if offer is not None and offer_utility >= self.nash_outcomes[0]\
-                    and offer_utility >= self.ufun.reserved_value and offer_utility >= concession_threshold:
-                return True
+            # if offer is not None and offer_utility >= self.nash_outcomes[0]\
+            #         and offer_utility >= self.ufun.reserved_value and offer_utility >= concession_threshold:
+            #     return True
+            return False
         else:
             # since we are at disadvantage, simply accept valid offers above reservation value and concession threshold
             if offer is not None and offer_utility >= self.ufun.reserved_value and offer_utility >= concession_threshold:
@@ -197,8 +198,6 @@ class Group1(SAONegotiator):
         This function implements how (counter-)offers are made.
         The basic idea is to filter bids that are on the Pareto frontier, that gives us better utility that Nash point,
         that gives utility above both our and the opponent's reservation value, and above the concession threshold.
-        However, there is a 5% chance of randomly choosing a bid from all rational outcomes to throw the opponent's
-        estimate off.
         One caveat is that, if we have the final bid, in the last few steps (last 5%), we will bid bids that are slightly
         above the opponent's reservation estimate, but gives us the highest utility.
         Once a bid has been made, it is removed from the list of bids so that it is not offered again. However, once all
@@ -212,8 +211,7 @@ class Group1(SAONegotiator):
 
         Returns: The counteroffer as Outcome.
         """
-        # this threshold defines the final number of bids where stubborn strategy is implemented
-        final_bid_threshold = int(0.10 * self.nmi.n_steps) if self.nmi.n_steps > 100 else 10
+        # Initialization of bids:
         # check if pareto outcomes is empty, if so re-initialize the list
         if len(self.pareto_outcomes) == 0:
             self.get_pareto_outcomes()
@@ -222,16 +220,19 @@ class Group1(SAONegotiator):
                          bids[0][0] > self.ufun.reserved_value and bids[0][1] > self.partner_reserved_value and
                          bids[0][0] > concession_threshold]
 
-        # in the rare case that there are no bids that satisfy the above conditions, bid the best bid for us
+        # Bidding process:
+        # this threshold defines the final number of bids where stubborn strategy is implemented
+        final_bid_threshold = int(0.10 * self.nmi.n_steps) if self.nmi.n_steps > 100 else 10
+        # in the case that there are no bids that satisfy the above conditions, bid the best bid for us
         if len(possible_bids) == 0:
             bid_idx = self.pareto_outcomes[0][1]
             return self.rational_outcomes[bid_idx]
-        # if we have final bid, and the final steps are reached, bid the best offers
+        # if we have final bid, and the final steps are reached, bid the best offers, but do not recycle
         elif self.opponent_ends == False and state.step >= final_bid_threshold:
             best_offers = [offer for offer in possible_bids if offer[0][1] > self.partner_reserved_value]
             bid_idx = max(best_offers, key=lambda x: x[0][0])[1]
             return self.rational_outcomes[bid_idx]
-        # if in any other scenario, bid the lowest bid for opponent
+        # if in any other scenario, bid the best bids in decreasing order for us
         else:
             bid_idx = max(possible_bids, key=lambda x: x[0][0])[1]
             self.pareto_outcomes = [bid for bid in self.pareto_outcomes if bid[1] != bid_idx]
@@ -495,4 +496,4 @@ class Group1(SAONegotiator):
 if __name__ == "__main__":
     from helpers.runner import run_a_tournament
 
-    run_a_tournament(Group1, small=False, debug=True)
+    run_a_tournament(Group1, small=True, debug=False)
