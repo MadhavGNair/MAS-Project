@@ -46,6 +46,32 @@ class Group1(SAONegotiator):
     detecting_cells_prob = np.array
     phase_count = {'First': 0, 'Second': 0, 'Third': 0}
     
+    def reset_variables(self):
+        self.rational_outcomes = tuple()
+        self.partner_reserved_value = 0
+        # pareto_outcomes has the form ((a,b),c) where a=our utility, b=opponent's utility, and c=index of bid in rational outcomes
+        self.pareto_outcomes = list()
+        self.pareto_utilities = list()
+        self.pareto_indices = list()
+        self.nash_outcomes = list()
+        self.opponent_ends = bool
+        self.acceptance_concession_phase = {1: (1, 0), 2: (1, 0), 3: (1, 0)}
+        self.bidding_concession_phase    = {1: (1, 0), 2: (1, 0), 3: (1, 0)}
+        self.utility_history: list[float] = list()
+        self.differences: list[list[float]] = list()
+        self.verbosity_opponent_modelling: bool = False
+        self.opp_model_started: bool  = False
+        self.nr_opponent_rv_updates: int = 0
+        self.opponent_differences: list[list[float]] = list()
+        self.NR_STEPS_BEFORE_OPP_MODEL: int = 10
+        self.opponent_bid_history = list()
+        self.opponent_utility_history: list[float] = list()
+        self.opponent_rv_upper_bound: float = 1
+        self.opponent_rv_lower_bound: float = 0
+        self.NR_DETECTING_CELLS: int = 20
+        self.detecting_cells_bounds: list[float] = list()
+        self.detecting_cells_prob = np.array
+        self.phase_count = {'First': 0, 'Second': 0, 'Third': 0}
 
     def on_preferences_changed(self, changes):
         """
@@ -59,6 +85,8 @@ class Group1(SAONegotiator):
         # If there are no outcomes (should in theory never happen)
         if self.ufun is None:
             return
+        
+        self.reset_variables()
 
         # this stores all the possible outcomes (so filtering required)
         self.rational_outcomes = [
