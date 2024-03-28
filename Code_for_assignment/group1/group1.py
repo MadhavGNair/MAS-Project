@@ -15,6 +15,9 @@ from negmas.preferences import pareto_frontier, nash_points
 import numpy as np
 np.seterr(all='raise')
 
+import matplotlib
+matplotlib.use('Agg')
+
 class Group1(SAONegotiator):
     """
     Your agent code. This is the ONLY class you need to implement
