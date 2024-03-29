@@ -34,6 +34,7 @@ class Group1(SAONegotiator):
     utility_history: list[float] 
     differences: list[list[float]] 
     phase_count: dict
+    debug: bool = True
 
     verbosity_opponent_modelling: bool = False
     opponent_reserved_value: int
@@ -107,23 +108,23 @@ class Group1(SAONegotiator):
         # If there are no outcomes (should in theory never happen)
         if self.ufun is None:
             return
-        
+
+        ###  INITIALIZE NEGOTIATION ENVIRONMENT ###
         self.reset_variables()
 
-        # this stores all the possible outcomes (so filtering required)
+        # Store all possible outcomes with higher utility than our reservation value
         self.rational_outcomes = [
             _
             for _ in self.nmi.outcome_space.enumerate_or_sample()  # enumerates outcome space when finite, samples when infinite
             if self.ufun(_) > self.ufun.reserved_value
         ]
 
-        # initialize the list of pareto outcomes
+        # Initialize the list of pareto outcomes
         self.get_pareto_outcomes()
 
-        # calculate and store the Nash points
+        # Calculate and store the Nash points (we are selecting the first one)
         self.nash_outcomes = nash_points([self.ufun, self.opponent_ufun],
-                                         pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes.copy())[
-                                             0])[0][0]
+                                         pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes.copy())[0])[0][0]
 
         ### OPPONENT MODELLING INITIALIZATION ###
 
@@ -135,10 +136,10 @@ class Group1(SAONegotiator):
         self.opponent_rv_lower_bound = sorted(self.pareto_utilities, key= lambda x: x[1])[0][1]
 
         # Uniform distribution in the detecting cells
-        #self.detecting_cells_prob = [1/self.NR_DETECTING_CELLS] * self.NR_DETECTING_CELLS
         self.detecting_cells_prob = np.full(self.NR_DETECTING_CELLS, fill_value=1/self.NR_DETECTING_CELLS)
-
-        self.opponent_reserved_value = self.opponent_rv_upper_bound # First guess (if needed)
+        
+        # First guess (if needed)
+        self.opponent_reserved_value = self.opponent_rv_upper_bound 
 
 
     def __call__(self, state: SAOState) -> SAOResponse:
@@ -290,7 +291,7 @@ class Group1(SAONegotiator):
             return self.rational_outcomes[bid_idx]
 
     def update_differences(self, differences: list[list[float]], utility_history: list[float]) -> None:
-        assert len(utility_history) > 1
+        if self.debug: assert len(utility_history) > 1
         for k in range(len(utility_history)-1):
             if k == len(utility_history)-2: # Once per update (at the last step) we create the list with the new order of differences
                 if k==0:
@@ -314,7 +315,7 @@ class Group1(SAONegotiator):
             return 1
         
     def compute_time_criterion(self, differences: list[list[float]]) -> float:
-        assert len(differences) > 1
+        if self.debug: assert len(differences) > 1
         D = np.empty(len(differences))
         sum_differences = list()
         for k in range(len(differences)):
@@ -324,12 +325,12 @@ class Group1(SAONegotiator):
             D[k] = self.sign_subcriterion(positive_differences, negative_differences)
         max_sum_differences = [max([sum_differences[k]["pos"], sum_differences[k]["neg"]]) for k in range(len(differences))]
         w = np.array([max_sum_differences[k]/np.sum(max_sum_differences) if np.sum(max_sum_differences)>0 else 0 for k in range(len(differences))])
-        assert len(D) == len(D[np.invert(np.isnan(D))])
-        return np.dot(w, D)
+        if self.debug: assert len(D) == len(D[np.invert(np.isnan(D))])
+        return np.dot(w[np.invert(np.isnan(D))], D[np.invert(np.isnan(D))])
     
     def compute_behaviour_criterion(self) -> float:
         m = min([len(self.differences[0]), len(self.opponent_differences[0])])
-        assert len(self.opponent_differences[0]) == len(self.differences[0]) or len(self.opponent_differences[0]) == len(self.differences[0])+1
+        if self.debug: assert len(self.opponent_differences[0]) == len(self.differences[0]) or len(self.opponent_differences[0]) == len(self.differences[0])+1
         r_i =  [self.opponent_differences[0][-m:][i]/self.differences[0][-m:][i] if not math.isclose(self.differences[0][-m:][i], 0) else 0 for i in range(m)]
         w_i = [ 2*i/m*(m+1) for i in range(m)]
         r = np.dot(r_i, w_i)
@@ -344,24 +345,28 @@ class Group1(SAONegotiator):
         r_i_pos_differences = np.array(r_i)[np.greater(r_i, np.zeros(len(r_i)))]
         r_i_neg_differences = np.array(r_i)[np.less(r_i, np.zeros(len(r_i)))]
         D_2 = self.sign_subcriterion(positive_differences=r_i_pos_differences, negative_differences=r_i_neg_differences)
-        #print(f"(Opp ends={self.opponent_ends}) D_1 = {D_1}, D_2={D_2}")
         return (D_1+D_2)/2
 
     def update_partner_reserved_value(self, state: SAOState) -> None:
-        """This is one of the functions you can implement.
-        Using the information of the new offers, you can update the estimated reservation value of the opponent.
-
+        """
+        This function updates the opponent reserved value when it is assumed to be following a time concession strategy.
+        In order to do that, the following steps are done:
+            1. Create a detecting region at the known deadline with possible reservation values. 
+               Initilize a prior distribution for the detecting region.
+            2. Fit different polinomial concession curves using the different reservation values and 
+               a beta value computed by regression with the opponent bid history.
+            3. Compute the correlatation between the curves and the bid history.
+            4. Use those correlations as the likelihoods of each reservation value (i.e. each detecting cell) 
+               and perform the bayesian update of the detecting region distribution.
+            5. Update the reservation value from the distribution by using the cell with max probability.
         Args:
             state (SAOState): the `SAOState` containing the offer from your partner (None if you are just starting the negotiation)
                    and other information about the negotiation (e.g. current step, relative time, etc.).
-
         Returns: None.
         """
-        assert self.ufun and self.opponent_ufun
-
-        # Initialization part 2
+        # Create the detecting region
         if state.step == self.opp_model_first_step:
-            # Update upper bound with first bid information
+            # Update upper bound with first bid utility
             if self.opponent_rv_upper_bound >= self.opponent_utility_history[0]:
                 self.opponent_rv_upper_bound = self.opponent_utility_history[0]-self.opponent_utility_history[0]/self.NR_DETECTING_CELLS
             self.opponent_reserved_value = self.opponent_rv_upper_bound # First guess (if needed)
@@ -371,16 +376,19 @@ class Group1(SAONegotiator):
             for k in range(self.NR_DETECTING_CELLS+1):
                 self.detecting_cells_bounds.append(self.opponent_rv_lower_bound+(k/self.NR_DETECTING_CELLS)*detecting_region_length)
 
-        def polynomial_concession(t, reservation_value, beta):
+        def polynomial_concession(t, reservation_value, beta):            
             return self.opponent_utility_history[0] + (reservation_value - self.opponent_utility_history[0]) * pow(t/self.nmi.n_steps, beta)
 
         def fitted_beta(reservation_value):
-            #p_i = np.log([(self.opponent_utility_history[0]-self.opponent_utility_history[t]) for t in range(1, len(self.opponent_utility_history))]) -np.log([(self.opponent_utility_history[0] - reservation_value) for t in range(1, len(self.opponent_utility_history))])
-            p_i = np.log([(self.opponent_utility_history[0] - self.opponent_utility_history[t])/(self.opponent_utility_history[0] - reservation_value) if abs(self.opponent_utility_history[0] - self.opponent_utility_history[t])>1e-3 else 1e-3 for t in range(1, len(self.opponent_utility_history))])
+            p_i = np.log([(self.opponent_utility_history[0] - self.opponent_utility_history[t])/(self.opponent_utility_history[0] - reservation_value) 
+                          if abs(self.opponent_utility_history[0] - self.opponent_utility_history[t])>1e-3 else 1e-3 for t in range(1, len(self.opponent_utility_history))])
             t_i = np.log([t/self.nmi.n_steps for t in range(1, len(self.opponent_utility_history))])
             beta = np.dot(p_i, t_i)/np.dot(t_i, t_i)
             if beta == float("inf"):
-                return 5
+                if self.debug:
+                    raise ValueError("Fitted beta computed with nonlinear regression is inf")
+                else:
+                    return 50
             else:
                 return beta
 
@@ -394,8 +402,7 @@ class Group1(SAONegotiator):
                 if abs(current_utility-previous_utility)>1e-10:
                     previous_step = current_step - k+1
                     break
-            alpha =  math.log((max_utility - current_utility)/(max_utility - previous_utility)) / math.log( current_step / previous_step)
-            #alpha =  (math.log(max_utility - current_utility) - math.log(max_utility - previous_utility) ) / math.log( current_step / previous_step) # equation 8 Zhang et al.
+            alpha =  math.log((max_utility - current_utility)/(max_utility - previous_utility)) / math.log( current_step / previous_step) # equation 8 Zhang et al.
             if alpha !=0:
                 if alpha>100:
                     if self.verbosity_opponent_modelling: print("Alpha adjusted to 100")
@@ -407,8 +414,15 @@ class Group1(SAONegotiator):
                     print(f"Null alpha in step {state.step} because the log argument is {(max_utility - current_utility)/(max_utility - previous_utility)}")
                 return 0.001
 
+        def non_linear_correlation(reservation_value: float) -> float:
+            """
+            Compute the non linear correlation between the fitted concesion and the bid history
 
-        def non_linear_correlation(reservation_value):
+            Args:
+                reservation_value: The assumed reservation value of the fitted concession curve.
+
+            Returns: The correlation between curve and history
+            """
             beta = fitted_beta(reservation_value)
             fitted_offers = [polynomial_concession(t, reservation_value, beta) for t in range(1, len(self.opponent_utility_history))]
             normalized_fitted_offers = np.array(fitted_offers) - np.mean(fitted_offers)
@@ -416,14 +430,14 @@ class Group1(SAONegotiator):
             denominator = math.sqrt(np.dot(normalized_fitted_offers, normalized_fitted_offers) * np.dot(normalized_history_offers, normalized_history_offers))
             if denominator != 0:
                 return np.dot(normalized_fitted_offers, normalized_history_offers) / denominator
-            else:
+            elif self.debug:
                 if self.verbosity_opponent_modelling:
-                    print(f"Beta: {beta}")
-                    print(f"RV: {reservation_value}")
-                    print(f"Denominator: {denominator}")
+                    print(f"Null denominator in the correlation of the curve with beta={beta} and RV={reservation_value}")
                     print(f"Mean Norm Offer fitted: {np.mean(normalized_fitted_offers)}")
                     print(f"Mean Norm Offer history: {np.mean(normalized_history_offers)}")
                 raise ValueError("Null correlation denominator")
+            else:
+                return 0
 
         # Take random reservation values in the detecting cells
         random_reservation_values = [random.uniform(self.detecting_cells_bounds[k], self.detecting_cells_bounds[k+1]) for k in range(self.NR_DETECTING_CELLS)]
