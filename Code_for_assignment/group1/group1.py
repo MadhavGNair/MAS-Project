@@ -166,9 +166,10 @@ class Group1(SAONegotiator):
         # Compute time-dependency criterion
         if len(self.opponent_differences) > 1:
             time_criterion = self.compute_time_criterion(differences=self.opponent_differences)
+            print(f"(opp ends={self.opponent_ends}) Step {state.step} (Rel t = {state.relative_time}):  Behaviour criterion = {self.compute_behaviour_criterion()}, Time criterion = {time_criterion}")
             # Start the opponent modelling when the time-dependency criterion is satisfied and opponent has proposed at least 3 different bids.
             if not self.opp_model_started:
-                if time_criterion > 0.1 and len(np.unique(self.opponent_utility_history)) > 2:
+                if time_criterion > 0.5 and len(np.unique(self.opponent_utility_history)) > 2:
                     self.opp_model_first_step = state.step
                     self.opp_model_started = True
                     if self.verbosity_opponent_modelling:
@@ -282,6 +283,16 @@ class Group1(SAONegotiator):
                 else:
                     differences[k].append(differences[k-1][-1]-differences[k-1][-2])
 
+    def sign_subcriterion(self, positive_differences, negative_differences) -> float:
+        pos_sum = np.sum(positive_differences)
+        neg_sum = np.sum(negative_differences)
+        if len(positive_differences)>0 and len(negative_differences)>0:
+            return abs((pos_sum/len(positive_differences))+(neg_sum/len(negative_differences))) / max([abs(pos_sum/len(positive_differences)), abs(neg_sum/len(negative_differences))])
+        elif len(positive_differences) == 0 and len(negative_differences)==0:
+            return 0
+        else:
+            return 1
+        
     def compute_time_criterion(self, differences: list[list[float]]) -> float:
         assert len(differences) > 1
         D = np.empty(len(differences))
@@ -290,17 +301,31 @@ class Group1(SAONegotiator):
             positive_differences = np.array(differences[k])[np.greater(differences[k], np.zeros(len(differences[k])))]
             negative_differences = np.array(differences[k])[np.less(differences[k], np.zeros(len(differences[k])))]
             sum_differences.append({"pos": np.sum(positive_differences), "neg": np.sum(negative_differences)})
-            if len(positive_differences)>0 and len(negative_differences)>0:
-                D[k] = abs((sum_differences[k]["pos"]/len(positive_differences))+(sum_differences[k]["neg"]/len(negative_differences))) / max([abs(sum_differences[k]["pos"]/len(positive_differences)), abs(sum_differences[k]["neg"]/len(negative_differences))])
-            elif len(positive_differences) == 0 and len(negative_differences)==0:
-                D[k] = 0
-            else:
-                D[k] = 1
+            D[k] = self.sign_subcriterion(positive_differences, negative_differences)
         max_sum_differences = [max([sum_differences[k]["pos"], sum_differences[k]["neg"]]) for k in range(len(differences))]
         w = np.array([max_sum_differences[k]/np.sum(max_sum_differences) if np.sum(max_sum_differences)>0 else 0 for k in range(len(differences))])
         assert len(D) == len(D[np.invert(np.isnan(D))])
         return np.dot(w, D)
-             
+    
+    def compute_behaviour_criterion(self) -> float:
+        m = min([len(self.differences[0]), len(self.opponent_differences[0])])
+        assert len(self.opponent_differences[0]) == len(self.differences[0]) or len(self.opponent_differences[0]) == len(self.differences[0])+1
+        r_i =  [self.opponent_differences[0][-m:][i]/self.differences[0][-m:][i] if not math.isclose(self.differences[0][-m:][i], 0) else 0 for i in range(m)]
+        w_i = [ 2*i/m*(m+1) for i in range(m)]
+        r = np.dot(r_i, w_i)
+        def h(r) -> float:
+            if r/2 <=0:
+                return 0
+            elif r/2 >=1:
+                return 1
+            else:
+                return r/2
+        D_1 = h(r)
+        r_i_pos_differences = np.array(r_i)[np.greater(r_i, np.zeros(len(r_i)))]
+        r_i_neg_differences = np.array(r_i)[np.less(r_i, np.zeros(len(r_i)))]
+        D_2 = self.sign_subcriterion(positive_differences=r_i_pos_differences, negative_differences=r_i_neg_differences)
+        #print(f"(Opp ends={self.opponent_ends}) D_1 = {D_1}, D_2={D_2}")
+        return (D_1+D_2)/2
 
     def update_partner_reserved_value(self, state: SAOState) -> None:
         """This is one of the functions you can implement.
