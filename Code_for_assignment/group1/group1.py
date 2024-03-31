@@ -29,7 +29,6 @@ class Group1(SAONegotiator):
     pareto_outcomes = list()
     pareto_utilities = list()
     pareto_indices = list()
-    nash_outcomes = list()
     opponent_ends = bool
     acceptance_concession_phase = {1: (1, 0), 2: (1, 0), 3: (1, 0)}
     bidding_concession_phase    = {1: (1, 0), 2: (1, 0), 3: (1, 0)}
@@ -48,7 +47,7 @@ class Group1(SAONegotiator):
     detecting_cells_bounds: list[float] = list()
     detecting_cells_prob = np.array
     phase_count = {'First': 0, 'Second': 0, 'Third': 0}
-    
+
     def reset_variables(self):
         self.rational_outcomes = tuple()
         self.partner_reserved_value = 0
@@ -56,7 +55,6 @@ class Group1(SAONegotiator):
         self.pareto_outcomes = list()
         self.pareto_utilities = list()
         self.pareto_indices = list()
-        self.nash_outcomes = list()
         self.opponent_ends = bool
         self.acceptance_concession_phase = {1: (1, 0), 2: (1, 0), 3: (1, 0)}
         self.bidding_concession_phase    = {1: (1, 0), 2: (1, 0), 3: (1, 0)}
@@ -100,11 +98,6 @@ class Group1(SAONegotiator):
 
         # initialize the list of pareto outcomes
         self.get_pareto_outcomes()
-
-        # calculate and store the Nash points
-        self.nash_outcomes = nash_points([self.ufun, self.opponent_ufun],
-                                         pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes.copy())[
-                                             0])[0][0]
 
         ### OPPONENT MODELLING INITIALIZATION ###
 
@@ -182,7 +175,7 @@ class Group1(SAONegotiator):
 
         # Determine the acceptability of the offer in the acceptance_strategy. Change the concession threshold to the curve function when decided
         concession_threshold = self.acceptance_curve(state, current_phase)
-        if self.acceptance_strategy(state, concession_threshold):
+        if self.acceptance_strategy(state, concession_threshold, current_phase):
             return SAOResponse(ResponseType.ACCEPT_OFFER, offer)
 
         concession_threshold = self.bidding_curve(state, current_phase)
@@ -194,7 +187,7 @@ class Group1(SAONegotiator):
             self.update_differences(differences=self.differences, utility_history=self.utility_history)
         return SAOResponse(ResponseType.REJECT_OFFER, bid)
 
-    def acceptance_strategy(self, state: SAOState, concession_threshold) -> bool:
+    def acceptance_strategy(self, state: SAOState, concession_threshold, phase, stubborn=False) -> bool:
         """
         This is one of the functions you need to implement.
         It should determine whether to accept the offer.
@@ -211,17 +204,31 @@ class Group1(SAONegotiator):
         offer = state.current_offer
         offer_utility = float(self.ufun(offer))
 
-        # define two strategies for when opponent has and does not have last bid
-        if not self.opponent_ends:
-            # if offer is above or equal to Nash point, our reservation value and our concession threshold, accept
-            if offer is not None and offer_utility >= self.nash_outcomes[0]\
-                    and offer_utility >= self.ufun.reserved_value and offer_utility >= concession_threshold:
-                return True
+        if stubborn:
+            if state.step == self.nmi.n_steps or state.step == self.nmi.n_steps - 1:
+                if offer is not None and offer_utility >= self.ufun.reserved_value:
+                    return True
+            elif not self.opponent_ends:
+                if offer is not None and offer_utility >= self.ufun.reserved_value:
+                    if phase == 3 and offer_utility >= 0.7:
+                        return True
+            else:
+                if offer is not None and offer_utility >= self.ufun.reserved_value and offer_utility >= 0.7:
+                    return True
+            return False
         else:
-            # since we are at disadvantage, simply accept valid offers above reservation value and concession threshold
-            if offer is not None and offer_utility >= self.ufun.reserved_value and offer_utility >= concession_threshold:
+            if float((offer_utility - self.ufun.reserved_value)/(1 - self.ufun.reserved_value)) >= 0.30:
                 return True
-        return False
+            # define two strategies for when opponent has and does not have last bid
+            elif not self.opponent_ends:
+                # if offer is above or equal to our reservation value and our concession threshold, accept
+                if offer is not None and offer_utility >= self.ufun.reserved_value and offer_utility >= concession_threshold:
+                    return True
+            else:
+                # since we are at disadvantage, simply accept valid offers above reservation value and concession threshold
+                if offer is not None and offer_utility >= self.ufun.reserved_value and offer_utility >= concession_threshold:
+                    return True
+            return False
 
     def bidding_strategy(self, state: SAOState, concession_threshold) -> Outcome | None:
         """
@@ -246,9 +253,8 @@ class Group1(SAONegotiator):
         if len(self.pareto_outcomes) == 0:
             self.get_pareto_outcomes()
         # compute all possible bids given the criteria for 'good' bids
-        possible_bids = [bids for bids in self.pareto_outcomes if bids[0][0] >= self.nash_outcomes[0] and
-                         bids[0][0] > self.ufun.reserved_value and bids[0][1] > self.partner_reserved_value and
-                         bids[0][0] > concession_threshold]
+        possible_bids = [bids for bids in self.pareto_outcomes if bids[0][0] > self.ufun.reserved_value and
+                         bids[0][1] > self.partner_reserved_value and bids[0][0] > concession_threshold]
 
         # Bidding process:
         # this threshold defines the final number of bids where stubborn strategy is implemented
@@ -256,16 +262,19 @@ class Group1(SAONegotiator):
         # in the case that there are no bids that satisfy the above conditions, bid the best bid for us
         if len(possible_bids) == 0:
             bid_idx = self.pareto_outcomes[0][1]
+            self.phase_count['First'] += 1
             return self.rational_outcomes[bid_idx]
         # if we have final bid, and the final steps are reached, bid the best offers, but do not recycle
         elif self.opponent_ends == False and state.step >= final_bid_threshold:
             best_offers = [offer for offer in possible_bids if offer[0][1] > self.partner_reserved_value]
             bid_idx = max(best_offers, key=lambda x: x[0][0])[1]
+            self.phase_count['Second'] += 1
             return self.rational_outcomes[bid_idx]
         # if in any other scenario, bid the best bids in decreasing order for us
         else:
             bid_idx = max(possible_bids, key=lambda x: x[0][0])[1]
             self.pareto_outcomes = [bid for bid in self.pareto_outcomes if bid[1] != bid_idx]
+            self.phase_count['Third'] += 1
             return self.rational_outcomes[bid_idx]
 
     def update_differences(self, differences: list[list[float]], utility_history: list[float]) -> None:
@@ -526,4 +535,4 @@ class Group1(SAONegotiator):
 if __name__ == "__main__":
     from helpers.runner import run_a_tournament
 
-    run_a_tournament(Group1, small=True, debug=False)
+    run_a_tournament(Group1, small=False, debug=False)
