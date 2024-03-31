@@ -54,10 +54,10 @@ def run_a_tournament(
     )
     if small:
         anl2024_tournament(
-            competitors=tuple([TestedNegotiator, RVFitter]),
-            n_scenarios=1,
+            competitors=tuple([TestedNegotiator, Boulware, RVFitter]),
+            n_scenarios=3,
             n_outcomes=n_outcomes,
-            n_repetitions=1,
+            n_repetitions=2,
             njobs=-1 if debug else 0,
             verbosity=2 if debug else 1,
             plot_fraction=1,
@@ -67,12 +67,12 @@ def run_a_tournament(
     else:
         anl2024_tournament(
             competitors=tuple([TestedNegotiator] + list(DEFAULT_AN2024_COMPETITORS)),
-            n_scenarios=n_scenarios,
+            n_scenarios=10,
             n_outcomes=n_outcomes,
             n_repetitions=1,
             njobs=-1 if debug else 0,
             verbosity=2 if debug else 1,
-            plot_fraction=0,
+            plot_fraction=1,
             name=name,
         ).final_scores
     print(f"Finished in {humanize_time(time.perf_counter() - start)}")
