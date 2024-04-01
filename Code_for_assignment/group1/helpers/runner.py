@@ -54,7 +54,7 @@ def run_a_tournament(
     )
     if small:
         anl2024_tournament(
-            competitors=tuple([TestedNegotiator, RVFitter]),
+            competitors=tuple([TestedNegotiator]  + list(DEFAULT_AN2024_COMPETITORS)),
             n_scenarios=1,
             n_outcomes=n_outcomes,
             n_repetitions=1,
@@ -69,7 +69,7 @@ def run_a_tournament(
             competitors=tuple([TestedNegotiator] + list(DEFAULT_AN2024_COMPETITORS)),
             n_scenarios=n_scenarios,
             n_outcomes=n_outcomes,
-            n_repetitions=1,
+            n_repetitions=n_repetitions,
             njobs=-1 if debug else 0,
             verbosity=2 if debug else 1,
             plot_fraction=0,

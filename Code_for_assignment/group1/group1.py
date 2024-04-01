@@ -22,44 +22,17 @@ class Group1(SAONegotiator):
     """
     Your agent code. This is the ONLY class you need to implement
     """
-
-    rational_outcomes: list[Outcome]
-    pareto_outcomes: list[tuple[tuple[float, float], int]]  #((a,b),c) where a=our utility, b=opponent's utility, and c=index of bid in rational outcomes
-    pareto_utilities: list[tuple[float, float]]
-    pareto_indices: list[int]
-    nash_outcomes: list
-    opponent_ends: bool
-    acceptance_concession_phase : dict
-    bidding_concession_phase : dict
-    utility_history: list[float] 
-    differences: list[list[float]] 
-    phase_count: dict
-    debug: bool = True
-
+    debug: bool = False
     verbosity_opponent_modelling: bool = False
-    opponent_reserved_value: int
-    opp_model_started: bool  
-    nr_opponent_rv_updates: int 
-    opponent_differences: list[list[float]] 
-    opponent_bid_history: list[Outcome]
-    opponent_utility_history: list[float]
-    opponent_rv_upper_bound: float
-    opponent_rv_lower_bound: float
     NR_DETECTING_CELLS: int = 20
-    detecting_cells_bounds: list[float]
-    detecting_cells_prob: np.array
     
     def reset_variables(self):
         self.rational_outcomes = list()
         self.pareto_outcomes = list()
         self.pareto_utilities = list()
         self.pareto_indices = list()
-        self.nash_outcomes = list()
-        self.acceptance_concession_phase = {1: (1, 0), 2: (1, 0), 3: (1, 0)}
-        self.bidding_concession_phase    = {1: (1, 0), 2: (1, 0), 3: (1, 0)}
         self.utility_history = list()
         self.differences = list()
-        self.phase_count = {'First': 0, 'Second': 0, 'Third': 0}
 
         self.opponent_reserved_value = 0
         self.opp_model_started = False
@@ -70,6 +43,7 @@ class Group1(SAONegotiator):
         self.opponent_rv_upper_bound = 1
         self.opponent_rv_lower_bound = 0
         self.detecting_cells_bounds = list()
+        self.detecting_cells_prob: np.array
         
     def get_pareto_outcomes(self):
         # from rational_outcomes, select pareto optimal outcomes using the multi-layer pareto strategy
@@ -95,7 +69,6 @@ class Group1(SAONegotiator):
         combined_pareto = list(zip(self.pareto_utilities, self.pareto_indices))
         self.pareto_outcomes = sorted(combined_pareto, key=lambda x: x[0][0], reverse=True)
 
-
     def on_preferences_changed(self, changes):
         """
         Called when preferences change. In ANL 2024, this is equivalent with initializing the agent.
@@ -116,31 +89,24 @@ class Group1(SAONegotiator):
         self.rational_outcomes = [
             _
             for _ in self.nmi.outcome_space.enumerate_or_sample()  # enumerates outcome space when finite, samples when infinite
-            if self.ufun(_) > self.ufun.reserved_value
+            if self.ufun(_) >= self.ufun.reserved_value
         ]
 
         # Initialize the list of pareto outcomes
         self.get_pareto_outcomes()
-
-        # Calculate and store the Nash points (we are selecting the first one)
-        self.nash_outcomes = nash_points([self.ufun, self.opponent_ufun],
-                                         pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes.copy())[0])[0][0]
+        assert self.pareto_outcomes != []
 
         ### OPPONENT MODELLING INITIALIZATION ###
 
         # Detecting region: First bounds of opponent's reservation value
-        for utilities in sorted(self.pareto_utilities, key= lambda x: x[0]):
-            if utilities[0] > self.ufun.reserved_value:
-                self.opponent_rv_upper_bound = utilities[1]
-                break
-        self.opponent_rv_lower_bound = sorted(self.pareto_utilities, key= lambda x: x[1])[0][1]
+        self.opponent_rv_upper_bound = 1
+        self.opponent_rv_lower_bound = 0
 
         # Uniform distribution in the detecting cells
         self.detecting_cells_prob = np.full(self.NR_DETECTING_CELLS, fill_value=1/self.NR_DETECTING_CELLS)
         
         # First guess (if needed)
         self.opponent_reserved_value = self.opponent_rv_upper_bound 
-
 
     def __call__(self, state: SAOState) -> SAOResponse:
         """
@@ -169,9 +135,6 @@ class Group1(SAONegotiator):
                 self.opponent_ends = True
             else:
                 self.opponent_ends = False
-
-        # Compute the current phase (first or second half of negotiation)
-        current_phase = self.compute_phase(state)
 
         # Save opponent's history of bids and utilities. Update utilities differences.
         if offer is not None:
@@ -203,11 +166,9 @@ class Group1(SAONegotiator):
             return SAOResponse(ResponseType.END_NEGOTIATION, None)
 
         # Determine the acceptability of the offer in the acceptance_strategy. Change the concession threshold to the curve function when decided
-        concession_threshold = self.acceptance_curve(state, current_phase)
+        concession_threshold = self.acceptance_curve(state)
         if self.acceptance_strategy(state, concession_threshold):
             return SAOResponse(ResponseType.ACCEPT_OFFER, offer)
-
-        concession_threshold = self.bidding_curve(state, current_phase)
 
         # If it's not acceptable, determine the counteroffer in the bidding_strategy and return it. Update self utility differences.
         bid = self.bidding_strategy(state, concession_threshold)
@@ -233,16 +194,9 @@ class Group1(SAONegotiator):
         offer = state.current_offer
         offer_utility = float(self.ufun(offer))
 
-        # define two strategies for when opponent has and does not have last bid
-        if not self.opponent_ends:
-            # if offer is above or equal to Nash point, our reservation value and our concession threshold, accept
-            if offer is not None and offer_utility >= self.nash_outcomes[0]\
-                    and offer_utility >= self.ufun.reserved_value and offer_utility >= concession_threshold:
-                return True
-        else:
-            # since we are at disadvantage, simply accept valid offers above reservation value and concession threshold
-            if offer is not None and offer_utility >= self.ufun.reserved_value and offer_utility >= concession_threshold:
-                return True
+        # accept above reservation value and concession threshold
+        if offer is not None and offer_utility >= self.ufun.reserved_value and offer_utility >= concession_threshold:
+            return True
         return False
 
     def bidding_strategy(self, state: SAOState, concession_threshold) -> Outcome | None:
@@ -263,31 +217,24 @@ class Group1(SAONegotiator):
 
         Returns: The counteroffer as Outcome.
         """
-        # Initialization of bids:
-        # check if pareto outcomes is empty, if so re-initialize the list
-        if len(self.pareto_outcomes) == 0:
-            self.get_pareto_outcomes()
+        # this threshold defines the final number of bids where stubborn strategy is implemented
+        final_bid_threshold = int(0.90 * self.nmi.n_steps)
+        
+        possible_bids = []
         # compute all possible bids given the criteria for 'good' bids
-        possible_bids = [bids for bids in self.pareto_outcomes if bids[0][0] >= self.nash_outcomes[0] and
-                         bids[0][0] > self.ufun.reserved_value and bids[0][1] > self.opponent_reserved_value and
-                         bids[0][0] > concession_threshold]
+        if state.step >= final_bid_threshold and self.opponent_ends == False:
+            possible_bids = [bids for bids in possible_bids if bids[0][1] >= (0.8 * self.opponent_reserved_value) and bids[0][0] >= self.ufun.reserved_value]
+
+        if len(possible_bids) == 0:
+            possible_bids = [bids for bids in self.pareto_outcomes if bids[0][0] >= concession_threshold]
 
         # Bidding process:
-        # this threshold defines the final number of bids where stubborn strategy is implemented
-        final_bid_threshold = int(0.10 * self.nmi.n_steps) if self.nmi.n_steps > 100 else 10
-        # in the case that there are no bids that satisfy the above conditions, bid the best bid for us
         if len(possible_bids) == 0:
+            # in the case that there are no bids that satisfy the above conditions, bid the best bid for us
             bid_idx = self.pareto_outcomes[0][1]
             return self.rational_outcomes[bid_idx]
-        # if we have final bid, and the final steps are reached, bid the best offers, but do not recycle
-        elif self.opponent_ends == False and state.step >= final_bid_threshold:
-            best_offers = [offer for offer in possible_bids if offer[0][1] > self.opponent_reserved_value]
-            bid_idx = max(best_offers, key=lambda x: x[0][0])[1]
-            return self.rational_outcomes[bid_idx]
-        # if in any other scenario, bid the best bids in decreasing order for us
         else:
-            bid_idx = max(possible_bids, key=lambda x: x[0][0])[1]
-            self.pareto_outcomes = [bid for bid in self.pareto_outcomes if bid[1] != bid_idx]
+            bid_idx = max(possible_bids, key=lambda x: x[0][1])[1]
             return self.rational_outcomes[bid_idx]
 
     def update_differences(self, differences: list[list[float]], utility_history: list[float]) -> None:
@@ -472,89 +419,24 @@ class Group1(SAONegotiator):
             if self.opponent_ufun(_) > self.partner_reserved_value
         ] """
 
-    def acceptance_curve(self, state: SAOState, current_phase):
+    def acceptance_curve(self, state: SAOState):
         """
         This function determines the acceptance curve point at the current time step.
 
         Args:
             state (SAOState): the `SAOState` containing the offer from your partner (None if you are just starting the negotiation)
                    and other information about the negotiation (e.g. current step, relative time, etc.).
-            current_phase: the current phase of negotiation
         """
         m = self.ufun.reserved_value
-        if current_phase == 1:
-            x = state.step
-            T = self.nmi.n_steps
-            M = 1
-            beta = 0.5
+        x = state.step
+        T = self.nmi.n_steps
+        M = 1
+        if not self.opponent_ends and self.nmi.n_steps > 100:
+            beta = 10
         else:
-            x = state.step - self.acceptance_concession_phase[current_phase - 1][1]
-            T = self.nmi.n_steps - self.acceptance_concession_phase[current_phase - 1][1]
-            M = self.acceptance_concession_phase[current_phase - 1][0]
+            beta = 5
 
-            if current_phase == 2:
-                beta = 1
-            else:
-                beta = 1.5
-
-        self.acceptance_concession_phase[current_phase] = (M - ((M - m) * pow(x/T, beta)), state.step)
-
-        return self.acceptance_concession_phase[current_phase][0]
-
-    def bidding_curve(self, state: SAOState, current_phase):
-        """
-        This function determines the bidding curve point at the current time step.
-
-        Args:
-            state (SAOState): the `SAOState` containing the offer from your partner (None if you are just starting the negotiation)
-                   and other information about the negotiation (e.g. current step, relative time, etc.).
-            current_phase: the current phase
-        """
-        if not self.opponent_ends:
-            m = self.ufun.reserved_value
-        else:
-            # The concession threshold aims for the maximum reservation value between the two agents
-            # This allows us to "follow" the opponent's strategy, but only in the case that
-            # (our prediction of) their reservation value is higher than ours
-            m = max(self.ufun.reserved_value, self.opponent_reserved_value)
-
-        if current_phase == 1:
-            x = state.step
-            T = self.nmi.n_steps
-            M = 1
-            beta = 0.5
-        else:
-            x = state.step - self.bidding_concession_phase[current_phase - 1][1]
-            T = self.nmi.n_steps - self.bidding_concession_phase[current_phase - 1][1]
-            M = self.bidding_concession_phase[current_phase - 1][0]
-
-            if current_phase == 2:
-                beta = 1
-            else:
-                beta = 1.5
-
-        self.bidding_concession_phase[current_phase] = (M - ((M - m) * pow(x/T, beta)), state.step)
-
-        return self.bidding_concession_phase[current_phase][0]
-
-
-    def compute_phase(self, state: SAOState) -> int:
-        """
-        Function to compute the current phase of negotiation. First half is Phase 1, the next 1/4th is Phase 2, and
-        the remaining steps is Phase 3.
-        Args:
-            state (SAOState): the `SAOState` containing the offer from your partner (None if you are just starting the negotiation)
-                   and other information about the negotiation (e.g. current step, relative time, etc.).
-
-        Returns:
-            The phase as an Integer.
-        """
-        if state.step <= (self.nmi.n_steps // 2):
-            return 1
-        elif state.step <= ((3 * self.nmi.n_steps) // 4):
-            return 2
-        else:
-            return 3
+        return M - ((M - m) * pow(x/T, beta))
 
 
 # if you want to do a very small test, use the parameter small=True here. Otherwise, you can use the default parameters.
