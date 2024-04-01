@@ -31,19 +31,21 @@ class Group1(SAONegotiator):
     opponent_ends: bool
     acceptance_concession_phase : dict
     bidding_concession_phase : dict
-    utility_history: list[float] 
-    differences: list[list[float]] 
+    utility_history_bidded_by_self: list[float] 
+    differences_bidded_by_self: list[list[float]] 
+    utility_history_bidded_by_opp: list[float] 
+    differences_bidded_by_opp: list[list[float]] 
     phase_count: dict
     nr_steps_last_phase: int
     debug: bool = True
 
-    verbosity_opponent_modelling: bool = False
+    verbosity_opponent_modelling: int = 1
     opponent_reserved_value: int
     opp_model_started: bool  
     nr_opponent_rv_updates: int 
-    opponent_differences: list[list[float]] 
     opponent_bid_history: list[Outcome]
-    opponent_utility_history: list[float]
+    opponent_utility_history_bidded_by_opp: list[float]
+    opponent_differences_bidded_by_opp: list[list[float]] 
     opponent_rv_upper_bound: float
     opponent_rv_lower_bound: float
     NR_DETECTING_CELLS: int = 10
@@ -58,17 +60,19 @@ class Group1(SAONegotiator):
         self.nash_outcomes = list()
         self.acceptance_concession_phase = {1: (1, 0), 2: (1, 0), 3: (1, 0)}
         self.bidding_concession_phase    = {1: (1, 0), 2: (1, 0), 3: (1, 0)}
-        self.utility_history = list()
-        self.differences = list()
+        self.utility_history_bidded_by_self = list()
+        self.differences_bidded_by_self = list()
+        self.utility_history_bidded_by_opp = list()
+        self.differences_bidded_by_opp = list()
         self.phase_count = {'First': 0, 'Second': 0, 'Third': 0}
         self.nr_steps_last_phase = max([3, math.ceil(0.1 * self.nmi.n_steps)]) if self.nmi.n_steps < 100 else 10 # final number of bids when we have last bid
 
         self.opponent_reserved_value = 0
         self.opp_model_started = False
         self.nr_opponent_rv_updates = 0
-        self.opponent_differences = list()
+        self.opponent_differences_bidded_by_opp = list()
         self.opponent_bid_history = list()
-        self.opponent_utility_history = list()
+        self.opponent_utility_history_bidded_by_opp = list()
         self.opponent_rv_upper_bound = 1
         self.opponent_rv_lower_bound = 0
         self.detecting_cells_bounds = list()
@@ -93,9 +97,9 @@ class Group1(SAONegotiator):
             self.pareto_utilities.extend(list(pareto_frontier([self.ufun, self.opponent_ufun], rational_copy)[0]))
             self.pareto_indices.extend(list(pareto_frontier([self.ufun, self.opponent_ufun], rational_copy)[1]))
 
-        # sort pareto_utilities and pareto_indices in descending order
+        # Sort pareto_utilities and pareto_indices in descending order of our utility
         combined_pareto = list(zip(self.pareto_utilities, self.pareto_indices))
-        self.pareto_outcomes = sorted(combined_pareto, key=lambda x: x[0][0], reverse=True)
+        self.pareto_outcomes = sorted(combined_pareto, key=lambda x: x[0][0], reverse=True) 
 
 
     def on_preferences_changed(self, changes):
@@ -121,8 +125,11 @@ class Group1(SAONegotiator):
             if self.ufun(_) > self.ufun.reserved_value
         ]
 
-        # Initialize the list of pareto outcomes
+        # Initialize the list of pareto outcomes.
         self.get_pareto_outcomes()
+
+        # Statarting bid as the pareto bid with highest utility for us.
+        self.starting_bid_concession = self.pareto_outcomes[0][0][0]
 
         # Calculate and store the Nash points (we are selecting the first one)
         self.nash_outcomes = nash_points([self.ufun, self.opponent_ufun],
@@ -179,25 +186,32 @@ class Group1(SAONegotiator):
         # Save opponent's history of bids and utilities. Update utilities differences.
         if offer is not None:
             self.opponent_bid_history.append(offer)
-            if len(self.opponent_utility_history) > 0 and self.opponent_ufun(offer) > self.opponent_utility_history[0]:
-                self.opponent_utility_history.append(self.opponent_utility_history[-1])
+            if len(self.opponent_utility_history_bidded_by_opp) > 0 and self.opponent_ufun(offer) > self.opponent_utility_history_bidded_by_opp[0]:
+                self.opponent_utility_history_bidded_by_opp.append(self.opponent_utility_history_bidded_by_opp[-1])
             else:
-                self.opponent_utility_history.append(self.opponent_ufun(offer))
-        if len(self.opponent_utility_history) > 1:
-            self.update_differences(differences=self.opponent_differences, utility_history=self.opponent_utility_history)
+                self.opponent_utility_history_bidded_by_opp.append(self.opponent_ufun(offer))
+            self.utility_history_bidded_by_opp.append(self.ufun(offer))
+        if len(self.opponent_utility_history_bidded_by_opp) > 1:
+            self.update_differences(differences=self.opponent_differences_bidded_by_opp, 
+                                    utility_history=self.opponent_utility_history_bidded_by_opp)
+            self.update_differences(differences=self.differences_bidded_by_opp, 
+                                    utility_history=self.utility_history_bidded_by_opp,
+                                    max_order=2)
 
         # Compute time-dependency criterion
-        if len(self.opponent_differences) > 1:
-            time_criterion = self.compute_time_criterion(differences=self.opponent_differences)
-            if self.verbosity_opponent_modelling:
-                print(f"(opp ends={self.opponent_ends}) Step {state.step} (Rel t = {state.relative_time}):  Behaviour criterion = {self.compute_behaviour_criterion()}, Time criterion = {time_criterion}")
+        if len(self.opponent_differences_bidded_by_opp) > 1:
+            time_criterion = self.compute_time_criterion(differences=self.opponent_differences_bidded_by_opp)
+            if self.verbosity_opponent_modelling > 3:
+                print(f"(opp ends={self.opponent_ends}) Step {state.step} (Rel t = {state.relative_time}): \
+                       Behaviour criterion = {self.compute_behaviour_criterion()}, Time criterion = {time_criterion}")
             # Start the opponent modelling when the time-dependency criterion is satisfied and opponent has proposed at least 3 different bids.
             if not self.opp_model_started:
-                if time_criterion > 0.5 and len(np.unique(self.opponent_utility_history)) > 2:
+                if time_criterion > 0.5 and len(np.unique(self.opponent_utility_history_bidded_by_opp)) > 2:
                     self.opp_model_first_step = state.step
                     self.opp_model_started = True
-                    if self.verbosity_opponent_modelling:
-                        print(f"(Opponent ends={self.opponent_ends}) Opponent modelling started in step {state.step} (Rel time = {state.relative_time}) with time criterion {time_criterion}")
+                    if self.verbosity_opponent_modelling > 0:
+                        print(f"(Opponent ends={self.opponent_ends}) Opponent modelling started in step {state.step} \
+                                (Rel time = {state.relative_time}) with time criterion {time_criterion}")
         if self.opp_model_started:
             self.update_partner_reserved_value(state)
 
@@ -214,9 +228,11 @@ class Group1(SAONegotiator):
 
         # If it's not acceptable, determine the counteroffer in the bidding_strategy and return it. Update self utility differences.
         bid = self.bidding_strategy(state, concession_threshold)
-        self.utility_history.append(self.ufun(bid))
-        if len(self.utility_history) > 1:
-            self.update_differences(differences=self.differences, utility_history=self.utility_history)
+        self.utility_history_bidded_by_self.append(self.ufun(bid))
+        if len(self.utility_history_bidded_by_self) > 1:
+            self.update_differences(differences=self.differences_bidded_by_self,
+                                    utility_history=self.utility_history_bidded_by_self,
+                                    max_order=2)
         return SAOResponse(ResponseType.REJECT_OFFER, bid)
 
     def compute_phase(self, state: SAOState) -> int:
@@ -300,6 +316,13 @@ class Group1(SAONegotiator):
         # define two strategies for when opponent has and does not have last bid
         if offer is None:
             return False
+        
+        # Accept big changes in our favour
+        acceptable_utility_difference = [.5, .3] # We need a bigger change to be acceptable when we end.
+        if self.differences_bidded_by_opp:
+            if self.differences_bidded_by_opp[0][-1] > acceptable_utility_difference[int(self.opponent_ends)] and offer_utility >= concession_threshold:
+                return True
+
         if not self.opponent_ends:
             if self.compute_phase(state) == 3:
                 return False
@@ -307,6 +330,8 @@ class Group1(SAONegotiator):
             if offer_utility >= self.ufun.reserved_value and offer_utility >= concession_threshold:
                 return True
         else:
+            if state.step == self.nmi.n_steps and offer_utility > self.ufun.reserved_value:
+                return True
             # since we are at disadvantage, simply accept valid offers above reservation value and concession threshold
             if offer_utility >= self.ufun.reserved_value and offer_utility >= concession_threshold:
                 return True
@@ -329,11 +354,12 @@ class Group1(SAONegotiator):
             # (our prediction of) their reservation value is higher than ours
             m = max(self.ufun.reserved_value, self.opponent_reserved_value) """
 
-        m = self.ufun.reserved_value
+        max_utility = self.starting_bid_concession
+        min_utility = self.ufun.reserved_value
         T = self.nmi.n_steps
-        beta = 5
+        beta = 7
         t = state.step
-        return 1 - ((1 - m) * pow(t/T, beta))
+        return max_utility - ((max_utility  - min_utility) * pow(t/T, beta))
 
         if current_phase == 1:
             t = state.step
@@ -350,7 +376,7 @@ class Group1(SAONegotiator):
             else:
                 beta = 1.5
 
-        self.bidding_concession_phase[current_phase] = (M - ((M - m) * pow(t/T, beta)), state.step)
+        self.bidding_concession_phase[current_phase] = (M - ((M - min_utility) * pow(t/T, beta)), state.step)
 
         return self.bidding_concession_phase[current_phase][0]
 
@@ -383,7 +409,8 @@ class Group1(SAONegotiator):
         if len(concession_bids) == 0:
             bid_idx = self.pareto_outcomes[0][1]
             return self.rational_outcomes[bid_idx]
-        # if we have final bid, and the final steps are reached, bid the best offers, but do not recycle
+        
+        # if we have final bid, and the final steps are reached, bid the best offers for us with utility for the opponent higher than its RV.
         elif self.opponent_ends == False and state.step >= self.nmi.n_steps - self.nr_steps_last_phase:
             pareto_copy = self.pareto_outcomes.copy()
             final_phase_step = (-1)*(self.nmi.n_steps - self.nr_steps_last_phase - state.step)
@@ -404,16 +431,27 @@ class Group1(SAONegotiator):
             best_offers = [offer for offer in pareto_copy if offer[0][1] > actual_min_opp_utility ]
             bid_idx = max(best_offers, key=lambda x: x[0][0])[1]
             return self.rational_outcomes[bid_idx]
+
         # if in any other scenario, bid the best bids in decreasing order for us
         else:
             bid_idx = max(concession_bids, key=lambda x: x[0][1])[1]
             #self.pareto_outcomes = [bid for bid in self.pareto_outcomes if bid[1] != bid_idx]
             return self.rational_outcomes[bid_idx]
 
-    def update_differences(self, differences: list[list[float]], utility_history: list[float]) -> None:
+    def update_differences(self, 
+                           differences: list[list[float]], 
+                           utility_history: list[float], 
+                           max_order: int | None = None
+                           ) -> None:
+        """
+        Update the differences until order max_order from the given utility history.
+        """
         if self.debug: assert len(utility_history) > 1
-        for k in range(len(utility_history)-1):
-            if k == len(utility_history)-2: # Once per update (at the last step) we create the list with the new order of differences
+        
+        m = max_order if max_order is not None and len(utility_history)-1 > max_order else len(utility_history)-1
+        for k in range(m):
+            # Once per update (at the last step and if max order was not achieved) we create the list with the new order differences.
+            if k == len(utility_history)-2: 
                 if k==0:
                     differences.append([utility_history[1]-utility_history[0]])
                 else:
@@ -449,9 +487,9 @@ class Group1(SAONegotiator):
         return np.dot(w[np.invert(np.isnan(D))], D[np.invert(np.isnan(D))])
     
     def compute_behaviour_criterion(self) -> float:
-        m = min([len(self.differences[0]), len(self.opponent_differences[0])])
-        if self.debug: assert len(self.opponent_differences[0]) == len(self.differences[0]) or len(self.opponent_differences[0]) == len(self.differences[0])+1
-        r_i =  [self.opponent_differences[0][-m:][i]/self.differences[0][-m:][i] if not math.isclose(self.differences[0][-m:][i], 0) else 0 for i in range(m)]
+        m = min([len(self.differences_bidded_by_self[0]), len(self.opponent_differences_bidded_by_opp[0])])
+        if self.debug: assert len(self.opponent_differences_bidded_by_opp[0]) == len(self.differences_bidded_by_self[0]) or len(self.opponent_differences_bidded_by_opp[0]) == len(self.differences_bidded_by_self[0])+1
+        r_i =  [self.opponent_differences_bidded_by_opp[0][-m:][i]/self.differences_bidded_by_self[0][-m:][i] if not math.isclose(self.differences_bidded_by_self[0][-m:][i], 0) else 0 for i in range(m)]
         w_i = [ 2*i/m*(m+1) for i in range(m)]
         r = np.dot(r_i, w_i)
         def h(r) -> float:
@@ -487,8 +525,8 @@ class Group1(SAONegotiator):
         # Create the detecting region
         if state.step == self.opp_model_first_step:
             # Update upper bound with first bid utility
-            if self.opponent_rv_upper_bound >= self.opponent_utility_history[0]:
-                self.opponent_rv_upper_bound = self.opponent_utility_history[0]-self.opponent_utility_history[0]/self.NR_DETECTING_CELLS
+            if self.opponent_rv_upper_bound >= self.opponent_utility_history_bidded_by_opp[0]:
+                self.opponent_rv_upper_bound = self.opponent_utility_history_bidded_by_opp[0]-self.opponent_utility_history_bidded_by_opp[0]/self.NR_DETECTING_CELLS
             self.opponent_reserved_value = self.opponent_rv_upper_bound # First guess (if needed)
 
             # Dividing the detecting region into detecting cells
@@ -497,12 +535,12 @@ class Group1(SAONegotiator):
                 self.detecting_cells_bounds.append(self.opponent_rv_lower_bound+(k/self.NR_DETECTING_CELLS)*detecting_region_length)
 
         def polynomial_concession(t, reservation_value, beta):            
-            return self.opponent_utility_history[0] + (reservation_value - self.opponent_utility_history[0]) * pow(t/self.nmi.n_steps, beta)
+            return self.opponent_utility_history_bidded_by_opp[0] + (reservation_value - self.opponent_utility_history_bidded_by_opp[0]) * pow(t/self.nmi.n_steps, beta)
 
         def fitted_beta(reservation_value):
-            p_i = np.log([(self.opponent_utility_history[0] - self.opponent_utility_history[t])/(self.opponent_utility_history[0] - reservation_value) 
-                          if abs(self.opponent_utility_history[0] - self.opponent_utility_history[t])>1e-3 else 1e-3 for t in range(1, len(self.opponent_utility_history))])
-            t_i = np.log([t/self.nmi.n_steps for t in range(1, len(self.opponent_utility_history))])
+            p_i = np.log([(self.opponent_utility_history_bidded_by_opp[0] - self.opponent_utility_history_bidded_by_opp[t])/(self.opponent_utility_history_bidded_by_opp[0] - reservation_value) 
+                          if abs(self.opponent_utility_history_bidded_by_opp[0] - self.opponent_utility_history_bidded_by_opp[t])>1e-3 else 1e-3 for t in range(1, len(self.opponent_utility_history_bidded_by_opp))])
+            t_i = np.log([t/self.nmi.n_steps for t in range(1, len(self.opponent_utility_history_bidded_by_opp))])
             beta = np.dot(p_i, t_i)/np.dot(t_i, t_i)
             if beta == float("inf"):
                 if self.debug:
@@ -513,24 +551,24 @@ class Group1(SAONegotiator):
                 return beta
 
         def fitted_alpha(reservation_value):
-            max_utility = max(self.opponent_utility_history)  # maximum utility achieved by the opponent
-            current_utility = self.opponent_utility_history[-1]  # current utility, opponent
+            max_utility = max(self.opponent_utility_history_bidded_by_opp)  # maximum utility achieved by the opponent
+            current_utility = self.opponent_utility_history_bidded_by_opp[-1]  # current utility, opponent
             current_step = state.step
             # Take the last utility different from the current and the corresponding time step
-            for k in range(2, len(self.opponent_utility_history)):
-                previous_utility = self.opponent_utility_history[-k]
+            for k in range(2, len(self.opponent_utility_history_bidded_by_opp)):
+                previous_utility = self.opponent_utility_history_bidded_by_opp[-k]
                 if abs(current_utility-previous_utility)>1e-10:
                     previous_step = current_step - k+1
                     break
             alpha =  math.log((max_utility - current_utility)/(max_utility - previous_utility)) / math.log( current_step / previous_step) # equation 8 Zhang et al.
             if alpha !=0:
                 if alpha>100:
-                    if self.verbosity_opponent_modelling: print("Alpha adjusted to 100")
+                    if self.verbosity_opponent_modelling > 1: print("Alpha adjusted to 100")
                     return 100
                 else:
                     return alpha
             else:
-                if self.verbosity_opponent_modelling: 
+                if self.verbosity_opponent_modelling > 1: 
                     print(f"Null alpha in step {state.step} because the log argument is {(max_utility - current_utility)/(max_utility - previous_utility)}")
                 return 0.001
 
@@ -544,14 +582,14 @@ class Group1(SAONegotiator):
             Returns: The correlation between curve and history
             """
             beta = fitted_beta(reservation_value)
-            fitted_offers = [polynomial_concession(t, reservation_value, beta) for t in range(1, len(self.opponent_utility_history))]
+            fitted_offers = [polynomial_concession(t, reservation_value, beta) for t in range(1, len(self.opponent_utility_history_bidded_by_opp))]
             normalized_fitted_offers = np.array(fitted_offers) - np.mean(fitted_offers)
-            normalized_history_offers = np.array(self.opponent_utility_history[1:]) - np.mean(self.opponent_utility_history[1:])
+            normalized_history_offers = np.array(self.opponent_utility_history_bidded_by_opp[1:]) - np.mean(self.opponent_utility_history_bidded_by_opp[1:])
             denominator = math.sqrt(np.dot(normalized_fitted_offers, normalized_fitted_offers) * np.dot(normalized_history_offers, normalized_history_offers))
             if denominator != 0:
                 return abs(np.dot(normalized_fitted_offers, normalized_history_offers) / denominator)
             elif self.debug:
-                if self.verbosity_opponent_modelling:
+                if self.verbosity_opponent_modelling > 1:
                     print(f"Null denominator in the correlation of the curve with beta={beta} and RV={reservation_value}")
                     print(f"Mean Norm Offer fitted: {np.mean(normalized_fitted_offers)}")
                     print(f"Mean Norm Offer history: {np.mean(normalized_history_offers)}")
@@ -582,12 +620,12 @@ class Group1(SAONegotiator):
         self.opponent_reserved_value = compute_expected_reserved_value()
         self.nr_opponent_rv_updates += 1
 
-        if self.verbosity_opponent_modelling and state.step % 10 == 0:
-            print(f"(Opponent ends={self.opponent_ends}) Partner max predicted reserved value at step {state.step} (rel time={state.relative_time}) = {self.opponent_reserved_value}")
-            print(f"(Opponent ends={self.opponent_ends}) Partner avg predicted reserved value at step {state.step} (rel time={state.relative_time}) = {compute_expected_reserved_value()}")
-            print(f"Total nr of updates = {self.nr_opponent_rv_updates}")
-            if self.opponent_ends and self.compute_phase(state) == 3:
-                print(f"(Opponent ends={self.opponent_ends}) Predicted reserved value at step {state.step} (rel time={state.relative_time}) = {self.opponent_reserved_value}")
+        if self.verbosity_opponent_modelling > 2 and state.step % 10 == 0:
+            print(f"(Opponent ends={self.opponent_ends}) (Rel time={state.relative_time}) \
+                  Predicted RV with {self.nr_opponent_rv_updates} updates = {compute_expected_reserved_value()}")
+            print(f"Total nr of updates = ")
+        if self.verbosity_opponent_modelling > 1 and self.opponent_ends and self.compute_phase(state) == 3:
+            print(f"(Opponent ends={self.opponent_ends}) Predicted reserved value at step {state.step} (rel time={state.relative_time}) = {self.opponent_reserved_value}")
         
 
         # update rational_outcomes by removing the outcomes that are below the reservation value of the opponent
@@ -603,4 +641,4 @@ class Group1(SAONegotiator):
 if __name__ == "__main__":
     from helpers.runner import run_a_tournament
 
-    run_a_tournament(Group1, small=False, debug=False)
+    run_a_tournament(Group1, small=True, debug=False)
