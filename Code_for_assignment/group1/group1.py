@@ -258,7 +258,7 @@ class Group1(SAONegotiator):
 
         # Bidding process:
         # this threshold defines the final number of bids where stubborn strategy is implemented
-        final_bid_threshold = int(0.10 * self.nmi.n_steps) if self.nmi.n_steps > 100 else 10
+        final_bid_threshold = int(0.90 * self.nmi.n_steps) if self.nmi.n_steps > 100 else 90
         # in the case that there are no bids that satisfy the above conditions, bid the best bid for us
         if len(possible_bids) == 0:
             bid_idx = self.pareto_outcomes[0][1]
