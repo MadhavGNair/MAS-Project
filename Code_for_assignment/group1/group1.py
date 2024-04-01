@@ -60,6 +60,7 @@ class Group1(SAONegotiator):
         self.differences_bidded_by_self = list()
         self.utility_history_bidded_by_opp = list()
         self.differences_bidded_by_opp = list()
+        self.nr_steps_last_phase = max([3, math.ceil(0.1 * self.nmi.n_steps)]) if self.nmi.n_steps < 500 else 50
 
         self.opponent_reserved_value = 0
         self.opp_model_started = False
@@ -329,16 +330,29 @@ class Group1(SAONegotiator):
 
         Returns: The counteroffer as Outcome.
         """
-        concession_bids = []
-        if self.phase == 3 and not self.opponent_ends:
-            concession_bids = [bids for bids in self.pareto_outcomes if bids[0][0] > self.concession_threshold and bids[0][1] > (1.25 * self.opponent_reserved_value)]
-
-        if len(concession_bids) == 0:
-            # compute all possible bids given the criteria for 'good' bids
-            concession_bids = [bids for bids in self.pareto_outcomes if bids[0][0] > self.concession_threshold]
+        concession_bids = [bids for bids in self.pareto_outcomes if bids[0][0] > self.concession_threshold ]
 
         if len(concession_bids) == 0:
             bid_idx = max(range(len(self.rational_outcomes)), key=lambda x: self.ufun(self.rational_outcomes[x]))
+        elif not self.opponent_ends and state.step >= self.nmi.n_steps - self.nr_steps_last_phase:
+            pareto_copy = self.pareto_outcomes.copy()
+            final_phase_step = (-1)*(self.nmi.n_steps - self.nr_steps_last_phase - state.step)
+            if self.debug: assert final_phase_step >=0 and final_phase_step<self.nr_steps_last_phase
+
+            def last_step_max_utility():
+                if self.debug: assert self.opponent_reserved_value <= self.opponent_rv_upper_bound
+                possible_thresholds = np.linspace(start=self.opponent_reserved_value, stop=self.opponent_rv_upper_bound, num=10)
+                for i in range(len(possible_thresholds)):
+                    if not [offer for offer in pareto_copy if offer[0][1] >  possible_thresholds[i]]:
+                        return possible_thresholds[i-1] if i>0 else possible_thresholds[0]
+                return self.opponent_rv_upper_bound
+            # Compute the maximum biddable opponent's utility in the last step. Linear threshold during
+            max_biddable_opp_utility = max([min([2*self.opponent_reserved_value, self.opponent_reserved_value+.15, last_step_max_utility() -.05]), 
+                                            min([self.opponent_reserved_value+.05, .95])])
+            # Offer the best bid for us with utility for the opponent greater than an increasing theshold from opp RV estimate to max biddable opp utility.
+            actual_min_opp_utility = self.opponent_reserved_value + (final_phase_step/self.nr_steps_last_phase) * (max_biddable_opp_utility - self.opponent_reserved_value)
+            best_offers = [offer for offer in pareto_copy if offer[0][1] > actual_min_opp_utility ]
+            bid_idx = max(best_offers, key=lambda x: x[0][0])[1]
         else:
             bid_idx = max(concession_bids, key=lambda x: x[0][1])[1]
             
