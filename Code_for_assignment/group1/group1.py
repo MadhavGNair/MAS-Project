@@ -104,10 +104,6 @@ class Group1(SAONegotiator):
         combined_pareto = list(zip(self.pareto_utilities, self.pareto_indices))
         self.pareto_outcomes = sorted(combined_pareto, key=lambda x: x[0][0], reverse=True)
 
-        # print(f"Listed {len(self.pareto_outcomes)} pareto outcomes")
-        # print(f"First pareto outcome: {self.pareto_outcomes[0]}")
-        # print(f"Last pareto outcome: {self.pareto_outcomes[-1]}")
-
     def on_preferences_changed(self, changes):
         """
         Called when preferences change. In ANL 2024, this is equivalent with initializing the agent.
