@@ -35,6 +35,7 @@ class Group1(SAONegotiator):
     differences_bidded_by_opp: list[list[float]] 
     debug: bool = False
 
+    deactivate_opponent_modelling: bool = False
     verbosity_opponent_modelling: int = 0
     opponent_reserved_value: int
     opp_model_started: bool  
@@ -81,7 +82,7 @@ class Group1(SAONegotiator):
         # the strategy is to set a threshold of pseudo-pareto outcomes. If the initial layer does not have
         # threshold amount of outcomes, removes that layer and calculate the next best pareto outcomes,
         # (hence pseudo), until the threshold is reached. Set threshold to 0 to get first frontier.
-        pareto_count = self.nmi.n_outcomes * 0.25
+        pareto_count = len(self.rational_outcomes) * 0.25
         self.pareto_utilities, self.pareto_indices = [], []
 
         rational_copy = self.rational_outcomes.copy()
@@ -197,29 +198,30 @@ class Group1(SAONegotiator):
             else:
                 self.opponent_utility_history_bidded_by_opp.append(self.opponent_ufun(offer))
             self.utility_history_bidded_by_opp.append(self.ufun(offer))
-        if len(self.opponent_utility_history_bidded_by_opp) > 1:
-            self.update_differences(differences=self.opponent_differences_bidded_by_opp, 
-                                    utility_history=self.opponent_utility_history_bidded_by_opp)
-            self.update_differences(differences=self.differences_bidded_by_opp, 
-                                    utility_history=self.utility_history_bidded_by_opp,
-                                    max_order=2)
 
-        # Compute time-dependency criterion
-        if len(self.opponent_differences_bidded_by_opp) > 1:
-            time_criterion = self.compute_time_criterion(differences=self.opponent_differences_bidded_by_opp)
-            if self.verbosity_opponent_modelling > 3:
-                print(f"(opp ends={self.opponent_ends}) Step {state.step} (Rel t = {state.relative_time}): \
-                       Behaviour criterion = {self.compute_behaviour_criterion()}, Time criterion = {time_criterion}")
-            # Start the opponent modelling when the time-dependency criterion is satisfied and opponent has proposed at least 3 different bids.
-            if not self.opp_model_started:
-                if time_criterion > 0.5 and len(np.unique(self.opponent_utility_history_bidded_by_opp)) > 2:
-                    self.opp_model_first_step = state.step
-                    self.opp_model_started = True
-                    if self.verbosity_opponent_modelling > 0:
-                        print(f"(Opponent ends={self.opponent_ends}) Opponent modelling started in step {state.step} \
-                                (Rel time = {state.relative_time}) with time criterion {time_criterion}")
-        if self.opp_model_started:
-            self.update_partner_reserved_value(state)
+        if not self.deactivate_opponent_modelling:
+            if len(self.opponent_utility_history_bidded_by_opp) > 1:
+                self.update_differences(differences=self.opponent_differences_bidded_by_opp, 
+                                        utility_history=self.opponent_utility_history_bidded_by_opp)
+                self.update_differences(differences=self.differences_bidded_by_opp, 
+                                        utility_history=self.utility_history_bidded_by_opp,
+                                        max_order=2)
+            # Compute time-dependency criterion
+            if len(self.opponent_differences_bidded_by_opp) > 1:
+                time_criterion = self.compute_time_criterion(differences=self.opponent_differences_bidded_by_opp)
+                if self.verbosity_opponent_modelling > 3:
+                    print(f"(opp ends={self.opponent_ends}) Step {state.step} (Rel t = {state.relative_time}): \
+                        Behaviour criterion = {self.compute_behaviour_criterion()}, Time criterion = {time_criterion}")
+                # Start the opponent modelling when the time-dependency criterion is satisfied and opponent has proposed at least 3 different bids.
+                if not self.opp_model_started:
+                    if time_criterion > 0.5 and len(np.unique(self.opponent_utility_history_bidded_by_opp)) > 2:
+                        self.opp_model_first_step = state.step
+                        self.opp_model_started = True
+                        if self.verbosity_opponent_modelling > 0:
+                            print(f"(Opponent ends={self.opponent_ends}) Opponent modelling started in step {state.step} \
+                                    (Rel time = {state.relative_time}) with time criterion {time_criterion}")
+            if self.opp_model_started:
+                self.update_partner_reserved_value(state)
 
         # if there are no outcomes (should in theory never happen)
         if self.ufun is None:
