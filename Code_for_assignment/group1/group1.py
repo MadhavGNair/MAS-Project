@@ -321,7 +321,7 @@ class Group1(SAONegotiator):
         # Accept big changes in normalized advantages in our favour
         acceptable_advantage_difference = [.3, .2] # We need a bigger change to be acceptable when we end
         if len(self.utility_history_bidded_by_opp) >1:
-            if self.get_normalized_advantage(self.utility_history_bidded_by_opp[-1]) - self.get_normalized_advantage(self.utility_history_bidded_by_opp[-2]) > acceptable_advantage_difference[int(self.opponent_ends)] \
+            if self.get_normalized_advantage(self.utility_history_bidded_by_opp[-1]) - max([self.get_normalized_advantage(self.utility_history_bidded_by_opp[-2]), 0]) > acceptable_advantage_difference[int(self.opponent_ends)] \
             and self.get_normalized_advantage(self.utility_history_bidded_by_opp[-1]) > 0:
                 return True
 
