@@ -240,6 +240,9 @@ class Group1(SAONegotiator):
                                     max_order=2)
         return SAOResponse(ResponseType.REJECT_OFFER, bid)
 
+    def get_normalized_advantage(self, utility: float) -> float:
+        return (utility - self.ufun.reserved_value)/(self.pareto_outcomes[0][0][0] - self.ufun.reserved_value)
+
     def compute_phase(self, state: SAOState) -> int:
         """
         Function to compute the current phase of negotiation. First half is Phase 1, the next 1/4th is Phase 2, and
@@ -312,10 +315,11 @@ class Group1(SAONegotiator):
         if offer is None:
             return False
         
-        # Accept big changes in our favour
-        acceptable_utility_difference = [.5, .3] # We need a bigger change to be acceptable when we end.
-        if self.differences_bidded_by_opp:
-            if self.differences_bidded_by_opp[0][-1] > acceptable_utility_difference[int(self.opponent_ends)] and offer_utility >= self.concession_threshold:
+        # Accept big changes in normalized advantages in our favour
+        acceptable_advantage_difference = [.3, .2] # We need a bigger change to be acceptable when we end
+        if len(self.utility_history_bidded_by_opp) >1:
+            if self.get_normalized_advantage(self.utility_history_bidded_by_opp[-1]) - self.get_normalized_advantage(self.utility_history_bidded_by_opp[-1]) > acceptable_advantage_difference[int(self.opponent_ends)] \
+            and offer_utility >= self.concession_threshold:
                 return True
 
         if offer_utility >= self.concession_threshold:
