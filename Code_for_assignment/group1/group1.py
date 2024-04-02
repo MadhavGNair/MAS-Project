@@ -70,6 +70,11 @@ class Group1(SAONegotiator):
         self.opponent_rv_upper_bound = 1
         self.opponent_rv_lower_bound = 0
         self.detecting_cells_bounds = list()
+
+        self.nr_steps_last_phase = max([3, math.ceil(0.1 * (self.nmi.n_steps - 1))]) if self.nmi.n_steps < 500 else 50
+        self.phases = {1:{'T': self.nmi.n_steps, 'M': 1, 't_offset': 0}, 
+                       2:{'T': self.nmi.n_steps, 'M': 1, 't_offset': 0}, 
+                       3: {'T': self.nmi.n_steps, 'M': 1, 't_offset': 0}}
         
     def get_pareto_outcomes(self):
         # from rational_outcomes, select pareto optimal outcomes using the multi-layer pareto strategy
@@ -246,9 +251,9 @@ class Group1(SAONegotiator):
         Returns:
             The phase as an Integer.
         """
-        if state.step < (self.nmi.n_steps * 0.8):
+        if state.step < ((self.nmi.n_steps - 1) * 0.8):
             self.phase = 1
-        elif state.step < (self.nmi.n_steps * 0.925):
+        elif state.step < self.nmi.n_steps - 1 - self.nr_steps_last_phase:
             self.phase = 2
         else:
             self.phase = 3
@@ -262,8 +267,8 @@ class Group1(SAONegotiator):
                 and other information about the negotiation (e.g. current step, relative time, etc.).
         """
         m = self.ufun.reserved_value
-        T = self.nmi.n_steps
         t = state.step
+        total_steps = self.nmi.n_steps - 1
 
         if self.phase == 1:
             beta = 6
@@ -275,8 +280,17 @@ class Group1(SAONegotiator):
             beta = 0.5
         else:
             beta = 1
-            
-        self.concession_threshold = 1 - ((1 - m) * pow(t/T, beta))
+
+        T = self.phases[self.phase]['T']
+        M = self.phases[self.phase]['M']
+        t_offset = self.phases[self.phase]['t_offset']
+
+        self.concession_threshold = M - ((M - m) * pow((t - t_offset)/T, beta))
+
+        if self.phase < 3:
+            self.phases[self.phase + 1]['T'] = total_steps - state.step
+            self.phases[self.phase + 1]['M'] = self.concession_threshold
+            self.phases[self.phase + 1]['t_offset'] = state.step
 
     def acceptance_strategy(self, state: SAOState) -> bool:
         """
@@ -542,4 +556,4 @@ class Group1(SAONegotiator):
 if __name__ == "__main__":
     from helpers.runner import run_a_tournament
 
-    run_a_tournament(Group1, small=True, debug=False)
+    run_a_tournament(Group1, small=False, debug=False)
