@@ -72,7 +72,7 @@ def run_a_tournament(
             n_repetitions=1,
             njobs=-1 if debug else 0,
             verbosity=2 if debug else 1,
-            plot_fraction=.5,
+            plot_fraction=0,
             name=name,
         ).final_scores
     print(f"Finished in {humanize_time(time.perf_counter() - start)}")
