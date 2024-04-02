@@ -1,0 +1,94 @@
+{
+  "__weakref__": null,
+  "agreement": [
+    "667_332"
+  ],
+  "annotation": {
+    "n_repetitions": 1,
+    "rep": 0
+  },
+  "broken": false,
+  "current_offer": [
+    "667_332"
+  ],
+  "current_proposer": "n57LoMvlU",
+  "current_proposer_agent": null,
+  "effective_scenario_name": "7424164829107682430",
+  "error_details": "",
+  "execution_time": 10.693402400000195,
+  "has_error": false,
+  "kalai_optimality": 0.9703861364425065,
+  "last_negotiator": "RVFitter@0",
+  "last_thread": "",
+  "max_utils": [
+    1.0,
+    1.0
+  ],
+  "max_welfare_optimality": 0.9179582417062819,
+  "mechanism_name": "7424164829107682430",
+  "mechanism_type": "negmas.sao.mechanism.SAOMechanism",
+  "modified_kalai_optimality": 0.9102898355198638,
+  "n_acceptances": 2,
+  "n_negotiators": 2,
+  "n_repetitions": 1,
+  "n_steps": 924,
+  "nash_optimality": 0.9369338740844564,
+  "negotiator_ids": [
+    "n57LoMvlU",
+    "n32zHLxMy"
+  ],
+  "negotiator_names": [
+    "RVFitter@0",
+    "Boulware@1"
+  ],
+  "negotiator_time_limit": Infinity,
+  "negotiator_times": [
+    9.672114299926761,
+    0.547372999968502
+  ],
+  "negotiator_types": [
+    "anl.anl2024.negotiators.builtins.rv_fitter.RVFitter",
+    "anl.anl2024.negotiators.builtins.wrappers.Boulware"
+  ],
+  "new_offerer_agents": [
+    null
+  ],
+  "new_offers": [
+    [
+      "n57LoMvlU",
+      [
+        "667_332"
+      ]
+    ]
+  ],
+  "params": null,
+  "pareto_optimality": 1.0,
+  "partners": [
+    "RVFitter",
+    "Boulware"
+  ],
+  "pend": 0,
+  "pend_per_second": 0,
+  "relative_time": 0.9491891891891892,
+  "rep": 0,
+  "reserved_values": [
+    0.3789425503239542,
+    0.47872925551213746
+  ],
+  "results": null,
+  "run_id": "7424164829107682430",
+  "running": false,
+  "scenario": "S8",
+  "started": true,
+  "step": 877,
+  "step_time_limit": Infinity,
+  "threads": {},
+  "time": 10.69315369999822,
+  "time_limit": 60,
+  "timedout": false,
+  "utilities": [
+    0.42482929301990097,
+    0.5801367099554089
+  ],
+  "waiting": false
+}

@@ -1,0 +1,96 @@
+{
+  "__weakref__": null,
+  "agreement": null,
+  "annotation": {
+    "n_repetitions": 1,
+    "rep": 0
+  },
+  "broken": false,
+  "current_offer": [
+    "v3",
+    "v2",
+    "v3"
+  ],
+  "current_proposer": "nFKgNj3ZM",
+  "current_proposer_agent": null,
+  "effective_scenario_name": "3776156114120455860",
+  "error_details": "",
+  "execution_time": 60.00343630000134,
+  "has_error": false,
+  "kalai_optimality": 0.7313737842089786,
+  "last_negotiator": "Linear@0",
+  "last_thread": "",
+  "max_utils": [
+    0.998504403449259,
+    0.9777028647042199
+  ],
+  "max_welfare_optimality": 0.5725019539120788,
+  "mechanism_name": "3776156114120455860",
+  "mechanism_type": "negmas.sao.mechanism.SAOMechanism",
+  "modified_kalai_optimality": 0.7109193308841925,
+  "n_acceptances": 1,
+  "n_negotiators": 2,
+  "n_repetitions": 1,
+  "n_steps": 3078,
+  "nash_optimality": 0.7193111510925604,
+  "negotiator_ids": [
+    "nFKgNj3ZM",
+    "niXD7N0Gq"
+  ],
+  "negotiator_names": [
+    "Linear@0",
+    "Group1@1"
+  ],
+  "negotiator_time_limit": Infinity,
+  "negotiator_times": [
+    0.2733690999484679,
+    59.47796699994797
+  ],
+  "negotiator_types": [
+    "anl.anl2024.negotiators.builtins.wrappers.Linear",
+    "__mp_main__.Group1"
+  ],
+  "new_offerer_agents": [
+    null
+  ],
+  "new_offers": [
+    [
+      "nFKgNj3ZM",
+      [
+        "v3",
+        "v2",
+        "v3"
+      ]
+    ]
+  ],
+  "params": null,
+  "pareto_optimality": 0.7638896549547706,
+  "partners": [
+    "Linear",
+    "Group1"
+  ],
+  "pend": 0,
+  "pend_per_second": 0,
+  "relative_time": 1.0,
+  "rep": 0,
+  "reserved_values": [
+    0.20075236868366658,
+    0.5089817644085616
+  ],
+  "results": null,
+  "run_id": "3776156114120455860",
+  "running": false,
+  "scenario": "DivideThePies9",
+  "started": true,
+  "step": 437,
+  "step_time_limit": Infinity,
+  "threads": {},
+  "time": 60.0031799999997,
+  "time_limit": 60,
+  "timedout": true,
+  "utilities": [
+    0.20075236868366658,
+    0.5089817644085616
+  ],
+  "waiting": false
+}

@@ -1,0 +1,94 @@
+{
+  "__weakref__": null,
+  "agreement": [
+    "72_927"
+  ],
+  "annotation": {
+    "n_repetitions": 1,
+    "rep": 0
+  },
+  "broken": false,
+  "current_offer": [
+    "72_927"
+  ],
+  "current_proposer": "nxJgthjgg",
+  "current_proposer_agent": null,
+  "effective_scenario_name": "-2172926361001330833",
+  "error_details": "",
+  "execution_time": 2.4192952000012156,
+  "has_error": false,
+  "kalai_optimality": 0.8301658135556477,
+  "last_negotiator": "RVFitter@0",
+  "last_thread": "",
+  "max_utils": [
+    1.0,
+    1.0
+  ],
+  "max_welfare_optimality": 0.9736870109062232,
+  "mechanism_name": "-2172926361001330833",
+  "mechanism_type": "negmas.sao.mechanism.SAOMechanism",
+  "modified_kalai_optimality": 0.638921640601303,
+  "n_acceptances": 2,
+  "n_negotiators": 2,
+  "n_repetitions": 1,
+  "n_steps": 393,
+  "nash_optimality": 0.9071278360216798,
+  "negotiator_ids": [
+    "nxJgthjgg",
+    "nMYKMP3Y3"
+  ],
+  "negotiator_names": [
+    "RVFitter@0",
+    "MiCRO@1"
+  ],
+  "negotiator_time_limit": Infinity,
+  "negotiator_times": [
+    2.1619182999820623,
+    0.11147680001886329
+  ],
+  "negotiator_types": [
+    "anl.anl2024.negotiators.builtins.rv_fitter.RVFitter",
+    "anl.anl2024.negotiators.builtins.micro.MiCRO"
+  ],
+  "new_offerer_agents": [
+    null
+  ],
+  "new_offers": [
+    [
+      "nxJgthjgg",
+      [
+        "72_927"
+      ]
+    ]
+  ],
+  "params": null,
+  "pareto_optimality": 1.0,
+  "partners": [
+    "RVFitter",
+    "MiCRO"
+  ],
+  "pend": 0,
+  "pend_per_second": 0,
+  "relative_time": 0.7563451776649747,
+  "rep": 0,
+  "reserved_values": [
+    0.06601418250027982,
+    0.43240100763022393
+  ],
+  "results": null,
+  "run_id": "-2172926361001330833",
+  "running": false,
+  "scenario": "S5",
+  "started": true,
+  "step": 297,
+  "step_time_limit": Infinity,
+  "threads": {},
+  "time": 2.419000000001688,
+  "time_limit": 60,
+  "timedout": false,
+  "utilities": [
+    0.1554837359861126,
+    0.885844624779491
+  ],
+  "waiting": false
+}

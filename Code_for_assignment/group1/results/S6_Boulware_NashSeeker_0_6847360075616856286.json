@@ -1,0 +1,99 @@
+{
+  "__weakref__": null,
+  "agreement": null,
+  "annotation": {
+    "n_repetitions": 1,
+    "rep": 0
+  },
+  "broken": false,
+  "current_offer": [
+    "400_599"
+  ],
+  "current_proposer": "nz89IRxig",
+  "current_proposer_agent": null,
+  "effective_scenario_name": "6847360075616856286",
+  "error_details": "",
+  "execution_time": 3.7553700000025856,
+  "has_error": false,
+  "kalai_optimality": 0.9655693032755521,
+  "last_negotiator": "NashSeeker@1",
+  "last_thread": "",
+  "max_utils": [
+    1.0,
+    1.0
+  ],
+  "max_welfare_optimality": 0.933812058072955,
+  "mechanism_name": "6847360075616856286",
+  "mechanism_type": "negmas.sao.mechanism.SAOMechanism",
+  "modified_kalai_optimality": 0.9561818531867049,
+  "n_acceptances": 1,
+  "n_negotiators": 2,
+  "n_repetitions": 1,
+  "n_steps": 2828,
+  "nash_optimality": 0.9605306613492087,
+  "negotiator_ids": [
+    "nGECALIPZ",
+    "nz89IRxig"
+  ],
+  "negotiator_names": [
+    "Boulware@0",
+    "NashSeeker@1"
+  ],
+  "negotiator_time_limit": Infinity,
+  "negotiator_times": [
+    1.4971482999389991,
+    0.8602228001582262
+  ],
+  "negotiator_types": [
+    "anl.anl2024.negotiators.builtins.wrappers.Boulware",
+    "anl.anl2024.negotiators.builtins.nash_seeker.NashSeeker"
+  ],
+  "new_offerer_agents": [
+    null,
+    null
+  ],
+  "new_offers": [
+    [
+      "nGECALIPZ",
+      [
+        "184_815"
+      ]
+    ],
+    [
+      "nz89IRxig",
+      [
+        "400_599"
+      ]
+    ]
+  ],
+  "params": null,
+  "pareto_optimality": 0.9656240180568754,
+  "partners": [
+    "Boulware",
+    "NashSeeker"
+  ],
+  "pend": 0,
+  "pend_per_second": 0,
+  "relative_time": 1.0,
+  "rep": 0,
+  "reserved_values": [
+    0.551129902768759,
+    0.4995437134189019
+  ],
+  "results": null,
+  "run_id": "6847360075616856286",
+  "running": false,
+  "scenario": "S6",
+  "started": true,
+  "step": 2828,
+  "step_time_limit": Infinity,
+  "threads": {},
+  "time": 3.7549728999983927,
+  "time_limit": 60,
+  "timedout": true,
+  "utilities": [
+    0.551129902768759,
+    0.4995437134189019
+  ],
+  "waiting": false
+}

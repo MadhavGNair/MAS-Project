@@ -1,0 +1,92 @@
+{
+  "__weakref__": null,
+  "agreement": [
+    "v10",
+    "v4",
+    "v9"
+  ],
+  "annotation": {
+    "n_repetitions": 1,
+    "rep": 0
+  },
+  "broken": false,
+  "current_offer": [
+    "v10",
+    "v4",
+    "v9"
+  ],
+  "current_proposer": "nNULdcWmz",
+  "current_proposer_agent": null,
+  "effective_scenario_name": "5039932563155318549",
+  "error_details": "",
+  "execution_time": 3.8613414999999804,
+  "has_error": false,
+  "kalai_optimality": 0.966304163025868,
+  "last_negotiator": "Boulware@1",
+  "last_thread": "",
+  "max_utils": [
+    0.998504403449259,
+    0.9777028647042199
+  ],
+  "max_welfare_optimality": 1.0,
+  "mechanism_name": "5039932563155318549",
+  "mechanism_type": "negmas.sao.mechanism.SAOMechanism",
+  "modified_kalai_optimality": 0.9467511869790068,
+  "n_acceptances": 2,
+  "n_negotiators": 2,
+  "n_repetitions": 1,
+  "n_steps": 3078,
+  "nash_optimality": 1.0,
+  "negotiator_ids": [
+    "nIb96XfBs",
+    "nNULdcWmz"
+  ],
+  "negotiator_names": [
+    "NashSeeker@0",
+    "Boulware@1"
+  ],
+  "negotiator_time_limit": Infinity,
+  "negotiator_times": [
+    1.0649158999876818,
+    1.475219799696788
+  ],
+  "negotiator_types": [
+    "anl.anl2024.negotiators.builtins.nash_seeker.NashSeeker",
+    "anl.anl2024.negotiators.builtins.wrappers.Boulware"
+  ],
+  "new_offerer_agents": [
+    null,
+    null
+  ],
+  "new_offers": [],
+  "params": null,
+  "pareto_optimality": 1.0,
+  "partners": [
+    "NashSeeker",
+    "Boulware"
+  ],
+  "pend": 0,
+  "pend_per_second": 0,
+  "relative_time": 0.8421565443325755,
+  "rep": 0,
+  "reserved_values": [
+    0.20075236868366658,
+    0.5089817644085616
+  ],
+  "results": null,
+  "run_id": "5039932563155318549",
+  "running": false,
+  "scenario": "DivideThePies9",
+  "started": true,
+  "step": 2592,
+  "step_time_limit": Infinity,
+  "threads": {},
+  "time": 3.861104100000375,
+  "time_limit": 60,
+  "timedout": false,
+  "utilities": [
+    0.49697986011062456,
+    0.7427261849821485
+  ],
+  "waiting": false
+}

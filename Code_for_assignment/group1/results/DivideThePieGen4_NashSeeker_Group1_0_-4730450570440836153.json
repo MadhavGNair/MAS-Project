@@ -1,0 +1,88 @@
+{
+  "__weakref__": null,
+  "agreement": [
+    "796_203"
+  ],
+  "annotation": {
+    "n_repetitions": 1,
+    "rep": 0
+  },
+  "broken": false,
+  "current_offer": [
+    "796_203"
+  ],
+  "current_proposer": "nxNDZqlDB",
+  "current_proposer_agent": null,
+  "effective_scenario_name": "-4730450570440836153",
+  "error_details": "",
+  "execution_time": 40.14459839999836,
+  "has_error": false,
+  "kalai_optimality": 0.9178042478305642,
+  "last_negotiator": "Group1@1",
+  "last_thread": "",
+  "max_utils": [
+    1.0,
+    1.0
+  ],
+  "max_welfare_optimality": 0.9603831275517992,
+  "mechanism_name": "-4730450570440836153",
+  "mechanism_type": "negmas.sao.mechanism.SAOMechanism",
+  "modified_kalai_optimality": 0.8924650145442221,
+  "n_acceptances": 2,
+  "n_negotiators": 2,
+  "n_repetitions": 1,
+  "n_steps": 458,
+  "nash_optimality": 0.8872324826891395,
+  "negotiator_ids": [
+    "nEoL9I0PJ",
+    "nxNDZqlDB"
+  ],
+  "negotiator_names": [
+    "NashSeeker@0",
+    "Group1@1"
+  ],
+  "negotiator_time_limit": Infinity,
+  "negotiator_times": [
+    0.30673260000912705,
+    39.625310800078296
+  ],
+  "negotiator_types": [
+    "anl.anl2024.negotiators.builtins.nash_seeker.NashSeeker",
+    "__mp_main__.Group1"
+  ],
+  "new_offerer_agents": [
+    null,
+    null
+  ],
+  "new_offers": [],
+  "params": null,
+  "pareto_optimality": 1.0,
+  "partners": [
+    "NashSeeker",
+    "Group1"
+  ],
+  "pend": 0,
+  "pend_per_second": 0,
+  "relative_time": 0.8344226579520697,
+  "rep": 0,
+  "reserved_values": [
+    0.01926807145517011,
+    0.07018770755082612
+  ],
+  "results": null,
+  "run_id": "-4730450570440836153",
+  "running": false,
+  "scenario": "DivideThePieGen4",
+  "started": true,
+  "step": 382,
+  "step_time_limit": Infinity,
+  "threads": {},
+  "time": 40.14436149999892,
+  "time_limit": 60,
+  "timedout": false,
+  "utilities": [
+    0.38590104921048707,
+    0.5998185956368018
+  ],
+  "waiting": false
+}

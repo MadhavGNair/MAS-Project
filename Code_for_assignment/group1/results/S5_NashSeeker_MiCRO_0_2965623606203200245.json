@@ -1,0 +1,99 @@
+{
+  "__weakref__": null,
+  "agreement": null,
+  "annotation": {
+    "n_repetitions": 1,
+    "rep": 0
+  },
+  "broken": false,
+  "current_offer": [
+    "764_235"
+  ],
+  "current_proposer": "nK3qyHjLo",
+  "current_proposer_agent": null,
+  "effective_scenario_name": "2965623606203200245",
+  "error_details": "",
+  "execution_time": 0.4619480000001204,
+  "has_error": false,
+  "kalai_optimality": 0.7453997747626419,
+  "last_negotiator": "MiCRO@1",
+  "last_thread": "",
+  "max_utils": [
+    1.0,
+    1.0
+  ],
+  "max_welfare_optimality": 0.46603973823552197,
+  "mechanism_name": "2965623606203200245",
+  "mechanism_type": "negmas.sao.mechanism.SAOMechanism",
+  "modified_kalai_optimality": 0.7570023914881919,
+  "n_acceptances": 1,
+  "n_negotiators": 2,
+  "n_repetitions": 1,
+  "n_steps": 393,
+  "nash_optimality": 0.7005682417531336,
+  "negotiator_ids": [
+    "nkb7WMivQ",
+    "nK3qyHjLo"
+  ],
+  "negotiator_names": [
+    "NashSeeker@0",
+    "MiCRO@1"
+  ],
+  "negotiator_time_limit": Infinity,
+  "negotiator_times": [
+    0.1499217999407847,
+    0.11826039997322368
+  ],
+  "negotiator_types": [
+    "anl.anl2024.negotiators.builtins.nash_seeker.NashSeeker",
+    "anl.anl2024.negotiators.builtins.micro.MiCRO"
+  ],
+  "new_offerer_agents": [
+    null,
+    null
+  ],
+  "new_offers": [
+    [
+      "nkb7WMivQ",
+      [
+        "444_555"
+      ]
+    ],
+    [
+      "nK3qyHjLo",
+      [
+        "764_235"
+      ]
+    ]
+  ],
+  "params": null,
+  "pareto_optimality": 0.7692254933572726,
+  "partners": [
+    "NashSeeker",
+    "MiCRO"
+  ],
+  "pend": 0,
+  "pend_per_second": 0,
+  "relative_time": 1.0,
+  "rep": 0,
+  "reserved_values": [
+    0.06601418250027982,
+    0.43240100763022393
+  ],
+  "results": null,
+  "run_id": "2965623606203200245",
+  "running": false,
+  "scenario": "S5",
+  "started": true,
+  "step": 393,
+  "step_time_limit": Infinity,
+  "threads": {},
+  "time": 0.46149050000167335,
+  "time_limit": 60,
+  "timedout": true,
+  "utilities": [
+    0.06601418250027982,
+    0.43240100763022393
+  ],
+  "waiting": false
+}

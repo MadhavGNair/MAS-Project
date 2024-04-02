@@ -1,0 +1,88 @@
+{
+  "__weakref__": null,
+  "agreement": [
+    "915_84"
+  ],
+  "annotation": {
+    "n_repetitions": 1,
+    "rep": 0
+  },
+  "broken": false,
+  "current_offer": [
+    "915_84"
+  ],
+  "current_proposer": "nzNz5J5cJ",
+  "current_proposer_agent": null,
+  "effective_scenario_name": "5989669453986108227",
+  "error_details": "",
+  "execution_time": 2.1585938000025635,
+  "has_error": false,
+  "kalai_optimality": 0.7939794843186617,
+  "last_negotiator": "MiCRO@1",
+  "last_thread": "",
+  "max_utils": [
+    1.0,
+    1.0
+  ],
+  "max_welfare_optimality": 0.9790606696715668,
+  "mechanism_name": "5989669453986108227",
+  "mechanism_type": "negmas.sao.mechanism.SAOMechanism",
+  "modified_kalai_optimality": 0.735293856775353,
+  "n_acceptances": 2,
+  "n_negotiators": 2,
+  "n_repetitions": 1,
+  "n_steps": 1428,
+  "nash_optimality": 0.7939794843186617,
+  "negotiator_ids": [
+    "nCkRO2hJ6",
+    "nzNz5J5cJ"
+  ],
+  "negotiator_names": [
+    "Boulware@0",
+    "MiCRO@1"
+  ],
+  "negotiator_time_limit": Infinity,
+  "negotiator_times": [
+    0.7989883000263944,
+    0.5010130000009667
+  ],
+  "negotiator_types": [
+    "anl.anl2024.negotiators.builtins.wrappers.Boulware",
+    "anl.anl2024.negotiators.builtins.micro.MiCRO"
+  ],
+  "new_offerer_agents": [
+    null,
+    null
+  ],
+  "new_offers": [],
+  "params": null,
+  "pareto_optimality": 0.9948722326561571,
+  "partners": [
+    "Boulware",
+    "MiCRO"
+  ],
+  "pend": 0,
+  "pend_per_second": 0,
+  "relative_time": 0.9937018894331701,
+  "rep": 0,
+  "reserved_values": [
+    0.24391920995504754,
+    0.292750583641468
+  ],
+  "results": null,
+  "run_id": "5989669453986108227",
+  "running": false,
+  "scenario": "S0",
+  "started": true,
+  "step": 1419,
+  "step_time_limit": Infinity,
+  "threads": {},
+  "time": 2.1583008999987214,
+  "time_limit": 60,
+  "timedout": false,
+  "utilities": [
+    0.29880841055682344,
+    0.7901702713584726
+  ],
+  "waiting": false
+}

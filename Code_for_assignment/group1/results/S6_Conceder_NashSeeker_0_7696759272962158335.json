@@ -1,0 +1,99 @@
+{
+  "__weakref__": null,
+  "agreement": null,
+  "annotation": {
+    "n_repetitions": 1,
+    "rep": 0
+  },
+  "broken": false,
+  "current_offer": [
+    "422_577"
+  ],
+  "current_proposer": "n0V4WlZqC",
+  "current_proposer_agent": null,
+  "effective_scenario_name": "7696759272962158335",
+  "error_details": "",
+  "execution_time": 3.717570799999521,
+  "has_error": false,
+  "kalai_optimality": 0.9655693032755521,
+  "last_negotiator": "NashSeeker@1",
+  "last_thread": "",
+  "max_utils": [
+    1.0,
+    1.0
+  ],
+  "max_welfare_optimality": 0.933812058072955,
+  "mechanism_name": "7696759272962158335",
+  "mechanism_type": "negmas.sao.mechanism.SAOMechanism",
+  "modified_kalai_optimality": 0.9561818531867049,
+  "n_acceptances": 1,
+  "n_negotiators": 2,
+  "n_repetitions": 1,
+  "n_steps": 2828,
+  "nash_optimality": 0.9605306613492087,
+  "negotiator_ids": [
+    "nneMtJJFm",
+    "n0V4WlZqC"
+  ],
+  "negotiator_names": [
+    "Conceder@0",
+    "NashSeeker@1"
+  ],
+  "negotiator_time_limit": Infinity,
+  "negotiator_times": [
+    1.444585400273354,
+    0.8843017998551659
+  ],
+  "negotiator_types": [
+    "anl.anl2024.negotiators.builtins.wrappers.Conceder",
+    "anl.anl2024.negotiators.builtins.nash_seeker.NashSeeker"
+  ],
+  "new_offerer_agents": [
+    null,
+    null
+  ],
+  "new_offers": [
+    [
+      "nneMtJJFm",
+      [
+        "20_979"
+      ]
+    ],
+    [
+      "n0V4WlZqC",
+      [
+        "422_577"
+      ]
+    ]
+  ],
+  "params": null,
+  "pareto_optimality": 0.9656240180568754,
+  "partners": [
+    "Conceder",
+    "NashSeeker"
+  ],
+  "pend": 0,
+  "pend_per_second": 0,
+  "relative_time": 1.0,
+  "rep": 0,
+  "reserved_values": [
+    0.551129902768759,
+    0.4995437134189019
+  ],
+  "results": null,
+  "run_id": "7696759272962158335",
+  "running": false,
+  "scenario": "S6",
+  "started": true,
+  "step": 2828,
+  "step_time_limit": Infinity,
+  "threads": {},
+  "time": 3.717020500000217,
+  "time_limit": 60,
+  "timedout": true,
+  "utilities": [
+    0.551129902768759,
+    0.4995437134189019
+  ],
+  "waiting": false
+}

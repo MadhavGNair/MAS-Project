@@ -1,0 +1,94 @@
+{
+  "__weakref__": null,
+  "agreement": [
+    "265_734"
+  ],
+  "annotation": {
+    "n_repetitions": 1,
+    "rep": 0
+  },
+  "broken": false,
+  "current_offer": [
+    "265_734"
+  ],
+  "current_proposer": "nVKBTJf2M",
+  "current_proposer_agent": null,
+  "effective_scenario_name": "-8483185423392254239",
+  "error_details": "",
+  "execution_time": 0.18007700000089244,
+  "has_error": false,
+  "kalai_optimality": 0.9282249660900102,
+  "last_negotiator": "RVFitter@0",
+  "last_thread": "",
+  "max_utils": [
+    1.0,
+    1.0
+  ],
+  "max_welfare_optimality": 1.0,
+  "mechanism_name": "-8483185423392254239",
+  "mechanism_type": "negmas.sao.mechanism.SAOMechanism",
+  "modified_kalai_optimality": 0.937897172350771,
+  "n_acceptances": 2,
+  "n_negotiators": 2,
+  "n_repetitions": 1,
+  "n_steps": 101,
+  "nash_optimality": 0.9282249660900102,
+  "negotiator_ids": [
+    "nVKBTJf2M",
+    "n3Lyd8r3H"
+  ],
+  "negotiator_names": [
+    "RVFitter@0",
+    "NashSeeker@1"
+  ],
+  "negotiator_time_limit": Infinity,
+  "negotiator_times": [
+    0.05019809999430436,
+    0.12399949999235105
+  ],
+  "negotiator_types": [
+    "anl.anl2024.negotiators.builtins.rv_fitter.RVFitter",
+    "anl.anl2024.negotiators.builtins.nash_seeker.NashSeeker"
+  ],
+  "new_offerer_agents": [
+    null
+  ],
+  "new_offers": [
+    [
+      "nVKBTJf2M",
+      [
+        "265_734"
+      ]
+    ]
+  ],
+  "params": null,
+  "pareto_optimality": 1.0,
+  "partners": [
+    "RVFitter",
+    "NashSeeker"
+  ],
+  "pend": 0,
+  "pend_per_second": 0,
+  "relative_time": 0.11764705882352941,
+  "rep": 0,
+  "reserved_values": [
+    0.4915376984745932,
+    0.22165832157329424
+  ],
+  "results": null,
+  "run_id": "-8483185423392254239",
+  "running": false,
+  "scenario": "DivideThePie3",
+  "started": true,
+  "step": 11,
+  "step_time_limit": Infinity,
+  "threads": {},
+  "time": 0.17984029999934137,
+  "time_limit": 60,
+  "timedout": false,
+  "utilities": [
+    0.5628561528595104,
+    0.4371438471404896
+  ],
+  "waiting": false
+}

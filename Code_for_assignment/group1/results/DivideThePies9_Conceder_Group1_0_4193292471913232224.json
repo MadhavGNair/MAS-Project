@@ -1,0 +1,96 @@
+{
+  "__weakref__": null,
+  "agreement": null,
+  "annotation": {
+    "n_repetitions": 1,
+    "rep": 0
+  },
+  "broken": false,
+  "current_offer": [
+    "v7",
+    "v2",
+    "v3"
+  ],
+  "current_proposer": "nGAfN4bA3",
+  "current_proposer_agent": null,
+  "effective_scenario_name": "4193292471913232224",
+  "error_details": "",
+  "execution_time": 60.01001650000035,
+  "has_error": false,
+  "kalai_optimality": 0.7313737842089786,
+  "last_negotiator": "Conceder@0",
+  "last_thread": "",
+  "max_utils": [
+    0.998504403449259,
+    0.9777028647042199
+  ],
+  "max_welfare_optimality": 0.5725019539120788,
+  "mechanism_name": "4193292471913232224",
+  "mechanism_type": "negmas.sao.mechanism.SAOMechanism",
+  "modified_kalai_optimality": 0.7109193308841925,
+  "n_acceptances": 1,
+  "n_negotiators": 2,
+  "n_repetitions": 1,
+  "n_steps": 3078,
+  "nash_optimality": 0.7193111510925604,
+  "negotiator_ids": [
+    "nGAfN4bA3",
+    "noTzlze6a"
+  ],
+  "negotiator_names": [
+    "Conceder@0",
+    "Group1@1"
+  ],
+  "negotiator_time_limit": Infinity,
+  "negotiator_times": [
+    0.35184149997803615,
+    59.400035499973455
+  ],
+  "negotiator_types": [
+    "anl.anl2024.negotiators.builtins.wrappers.Conceder",
+    "__mp_main__.Group1"
+  ],
+  "new_offerer_agents": [
+    null
+  ],
+  "new_offers": [
+    [
+      "nGAfN4bA3",
+      [
+        "v7",
+        "v2",
+        "v3"
+      ]
+    ]
+  ],
+  "params": null,
+  "pareto_optimality": 0.7638896549547706,
+  "partners": [
+    "Conceder",
+    "Group1"
+  ],
+  "pend": 0,
+  "pend_per_second": 0,
+  "relative_time": 1.0,
+  "rep": 0,
+  "reserved_values": [
+    0.20075236868366658,
+    0.5089817644085616
+  ],
+  "results": null,
+  "run_id": "4193292471913232224",
+  "running": false,
+  "scenario": "DivideThePies9",
+  "started": true,
+  "step": 442,
+  "step_time_limit": Infinity,
+  "threads": {},
+  "time": 60.009787200000574,
+  "time_limit": 60,
+  "timedout": true,
+  "utilities": [
+    0.20075236868366658,
+    0.5089817644085616
+  ],
+  "waiting": false
+}

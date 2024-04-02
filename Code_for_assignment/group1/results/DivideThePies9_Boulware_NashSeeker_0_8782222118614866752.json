@@ -1,0 +1,100 @@
+{
+  "__weakref__": null,
+  "agreement": [
+    "v10",
+    "v6",
+    "v9"
+  ],
+  "annotation": {
+    "n_repetitions": 1,
+    "rep": 0
+  },
+  "broken": false,
+  "current_offer": [
+    "v10",
+    "v6",
+    "v9"
+  ],
+  "current_proposer": "nmj609jaq",
+  "current_proposer_agent": null,
+  "effective_scenario_name": "8782222118614866752",
+  "error_details": "",
+  "execution_time": 3.806683000002522,
+  "has_error": false,
+  "kalai_optimality": 0.9143712165250582,
+  "last_negotiator": "Boulware@0",
+  "last_thread": "",
+  "max_utils": [
+    0.998504403449259,
+    0.9777028647042199
+  ],
+  "max_welfare_optimality": 0.9957381870380032,
+  "mechanism_name": "8782222118614866752",
+  "mechanism_type": "negmas.sao.mechanism.SAOMechanism",
+  "modified_kalai_optimality": 1.0,
+  "n_acceptances": 2,
+  "n_negotiators": 2,
+  "n_repetitions": 1,
+  "n_steps": 3078,
+  "nash_optimality": 0.9467511869790068,
+  "negotiator_ids": [
+    "nmj609jaq",
+    "nqZc2EKEv"
+  ],
+  "negotiator_names": [
+    "Boulware@0",
+    "NashSeeker@1"
+  ],
+  "negotiator_time_limit": Infinity,
+  "negotiator_times": [
+    1.5397030999338313,
+    0.8539386001284583
+  ],
+  "negotiator_types": [
+    "anl.anl2024.negotiators.builtins.wrappers.Boulware",
+    "anl.anl2024.negotiators.builtins.nash_seeker.NashSeeker"
+  ],
+  "new_offerer_agents": [
+    null
+  ],
+  "new_offers": [
+    [
+      "nmj609jaq",
+      [
+        "v10",
+        "v6",
+        "v9"
+      ]
+    ]
+  ],
+  "params": null,
+  "pareto_optimality": 1.0,
+  "partners": [
+    "Boulware",
+    "NashSeeker"
+  ],
+  "pend": 0,
+  "pend_per_second": 0,
+  "relative_time": 0.8687885677167911,
+  "rep": 0,
+  "reserved_values": [
+    0.20075236868366658,
+    0.5089817644085616
+  ],
+  "results": null,
+  "run_id": "8782222118614866752",
+  "running": false,
+  "scenario": "DivideThePies9",
+  "started": true,
+  "step": 2674,
+  "step_time_limit": Infinity,
+  "threads": {},
+  "time": 3.806467700000212,
+  "time_limit": 60,
+  "timedout": false,
+  "utilities": [
+    0.5448872096124255,
+    0.6895354401883055
+  ],
+  "waiting": false
+}

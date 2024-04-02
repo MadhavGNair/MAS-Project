@@ -1,0 +1,94 @@
+{
+  "__weakref__": null,
+  "agreement": [
+    "41_958"
+  ],
+  "annotation": {
+    "n_repetitions": 1,
+    "rep": 0
+  },
+  "broken": false,
+  "current_offer": [
+    "41_958"
+  ],
+  "current_proposer": "nDYcpPdgf",
+  "current_proposer_agent": null,
+  "effective_scenario_name": "-7949134440324051531",
+  "error_details": "",
+  "execution_time": 5.448308899998665,
+  "has_error": false,
+  "kalai_optimality": 0.864891870615007,
+  "last_negotiator": "MiCRO@0",
+  "last_thread": "",
+  "max_utils": [
+    1.0,
+    1.0
+  ],
+  "max_welfare_optimality": 0.983637795576841,
+  "mechanism_name": "-7949134440324051531",
+  "mechanism_type": "negmas.sao.mechanism.SAOMechanism",
+  "modified_kalai_optimality": 0.9938953403087815,
+  "n_acceptances": 2,
+  "n_negotiators": 2,
+  "n_repetitions": 1,
+  "n_steps": 4992,
+  "nash_optimality": 0.9199035676774574,
+  "negotiator_ids": [
+    "nDYcpPdgf",
+    "nhz7VQ4ff"
+  ],
+  "negotiator_names": [
+    "MiCRO@0",
+    "Boulware@1"
+  ],
+  "negotiator_time_limit": Infinity,
+  "negotiator_times": [
+    1.4332342000234348,
+    1.9514079002656217
+  ],
+  "negotiator_types": [
+    "anl.anl2024.negotiators.builtins.micro.MiCRO",
+    "anl.anl2024.negotiators.builtins.wrappers.Boulware"
+  ],
+  "new_offerer_agents": [
+    null
+  ],
+  "new_offers": [
+    [
+      "nDYcpPdgf",
+      [
+        "41_958"
+      ]
+    ]
+  ],
+  "params": null,
+  "pareto_optimality": 1.0,
+  "partners": [
+    "MiCRO",
+    "Boulware"
+  ],
+  "pend": 0,
+  "pend_per_second": 0,
+  "relative_time": 0.9052673743240537,
+  "rep": 0,
+  "reserved_values": [
+    0.7169296750081535,
+    0.18230909752420116
+  ],
+  "results": null,
+  "run_id": "-7949134440324051531",
+  "running": false,
+  "scenario": "S2",
+  "started": true,
+  "step": 4519,
+  "step_time_limit": Infinity,
+  "threads": {},
+  "time": 5.448045799999818,
+  "time_limit": 60,
+  "timedout": false,
+  "utilities": [
+    0.7266097908022101,
+    0.46765495298173987
+  ],
+  "waiting": false
+}

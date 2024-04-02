@@ -1,0 +1,99 @@
+{
+  "__weakref__": null,
+  "agreement": null,
+  "annotation": {
+    "n_repetitions": 1,
+    "rep": 0
+  },
+  "broken": false,
+  "current_offer": [
+    "762_237"
+  ],
+  "current_proposer": "nh0fRlRS1",
+  "current_proposer_agent": null,
+  "effective_scenario_name": "-7423402204410939890",
+  "error_details": "",
+  "execution_time": 1.3365988000005018,
+  "has_error": false,
+  "kalai_optimality": 0.9170679970290017,
+  "last_negotiator": "MiCRO@1",
+  "last_thread": "",
+  "max_utils": [
+    1.0,
+    1.0
+  ],
+  "max_welfare_optimality": 0.7834164544028791,
+  "mechanism_name": "-7423402204410939890",
+  "mechanism_type": "negmas.sao.mechanism.SAOMechanism",
+  "modified_kalai_optimality": 0.8831437926108359,
+  "n_acceptances": 1,
+  "n_negotiators": 2,
+  "n_repetitions": 1,
+  "n_steps": 924,
+  "nash_optimality": 0.9012115529803405,
+  "negotiator_ids": [
+    "nl9Djj6U6",
+    "nh0fRlRS1"
+  ],
+  "negotiator_names": [
+    "Linear@0",
+    "MiCRO@1"
+  ],
+  "negotiator_time_limit": Infinity,
+  "negotiator_times": [
+    0.5189401000679936,
+    0.3493637999345083
+  ],
+  "negotiator_types": [
+    "anl.anl2024.negotiators.builtins.wrappers.Linear",
+    "anl.anl2024.negotiators.builtins.micro.MiCRO"
+  ],
+  "new_offerer_agents": [
+    null,
+    null
+  ],
+  "new_offers": [
+    [
+      "nl9Djj6U6",
+      [
+        "239_760"
+      ]
+    ],
+    [
+      "nh0fRlRS1",
+      [
+        "762_237"
+      ]
+    ]
+  ],
+  "params": null,
+  "pareto_optimality": 0.9212946476664128,
+  "partners": [
+    "Linear",
+    "MiCRO"
+  ],
+  "pend": 0,
+  "pend_per_second": 0,
+  "relative_time": 1.0,
+  "rep": 0,
+  "reserved_values": [
+    0.3789425503239542,
+    0.47872925551213746
+  ],
+  "results": null,
+  "run_id": "-7423402204410939890",
+  "running": false,
+  "scenario": "S8",
+  "started": true,
+  "step": 924,
+  "step_time_limit": Infinity,
+  "threads": {},
+  "time": 1.3362011000026541,
+  "time_limit": 60,
+  "timedout": true,
+  "utilities": [
+    0.3789425503239542,
+    0.47872925551213746
+  ],
+  "waiting": false
+}

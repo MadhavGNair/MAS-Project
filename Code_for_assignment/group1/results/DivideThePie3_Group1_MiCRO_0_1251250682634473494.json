@@ -1,0 +1,99 @@
+{
+  "__weakref__": null,
+  "agreement": null,
+  "annotation": {
+    "n_repetitions": 1,
+    "rep": 0
+  },
+  "broken": false,
+  "current_offer": [
+    "164_835"
+  ],
+  "current_proposer": "nof5oBXe0",
+  "current_proposer_agent": null,
+  "effective_scenario_name": "1251250682634473494",
+  "error_details": "",
+  "execution_time": 2.0035548000014387,
+  "has_error": false,
+  "kalai_optimality": 0.8565976781834401,
+  "last_negotiator": "MiCRO@1",
+  "last_thread": "",
+  "max_utils": [
+    1.0,
+    1.0
+  ],
+  "max_welfare_optimality": 0.7131960200478875,
+  "mechanism_name": "1251250682634473494",
+  "mechanism_type": "negmas.sao.mechanism.SAOMechanism",
+  "modified_kalai_optimality": 0.8036072536757812,
+  "n_acceptances": 1,
+  "n_negotiators": 2,
+  "n_repetitions": 1,
+  "n_steps": 101,
+  "nash_optimality": 0.8565976781834401,
+  "negotiator_ids": [
+    "nuDRDREKi",
+    "nof5oBXe0"
+  ],
+  "negotiator_names": [
+    "Group1@0",
+    "MiCRO@1"
+  ],
+  "negotiator_time_limit": Infinity,
+  "negotiator_times": [
+    1.8937332999594219,
+    0.05460949998087017
+  ],
+  "negotiator_types": [
+    "__mp_main__.Group1",
+    "anl.anl2024.negotiators.builtins.micro.MiCRO"
+  ],
+  "new_offerer_agents": [
+    null,
+    null
+  ],
+  "new_offers": [
+    [
+      "nuDRDREKi",
+      [
+        "449_550"
+      ]
+    ],
+    [
+      "nof5oBXe0",
+      [
+        "164_835"
+      ]
+    ]
+  ],
+  "params": null,
+  "pareto_optimality": 0.8565976781834401,
+  "partners": [
+    "Group1",
+    "MiCRO"
+  ],
+  "pend": 0,
+  "pend_per_second": 0,
+  "relative_time": 1.0,
+  "rep": 0,
+  "reserved_values": [
+    0.4915376984745932,
+    0.22165832157329424
+  ],
+  "results": null,
+  "run_id": "1251250682634473494",
+  "running": false,
+  "scenario": "DivideThePie3",
+  "started": true,
+  "step": 101,
+  "step_time_limit": Infinity,
+  "threads": {},
+  "time": 2.002721799999563,
+  "time_limit": 60,
+  "timedout": true,
+  "utilities": [
+    0.4915376984745932,
+    0.22165832157329424
+  ],
+  "waiting": false
+}

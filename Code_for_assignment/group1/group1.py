@@ -71,6 +71,7 @@ class Group1(SAONegotiator):
         self.opponent_rv_upper_bound = 1
         self.opponent_rv_lower_bound = 0
         self.detecting_cells_bounds = list()
+        self.starting_bid_concession = float
         
     def get_pareto_outcomes(self):
         # from rational_outcomes, select pareto optimal outcomes using the multi-layer pareto strategy
@@ -105,10 +106,6 @@ class Group1(SAONegotiator):
         combined_pareto = list(zip(self.pareto_utilities, self.pareto_indices))
         self.pareto_outcomes = sorted(combined_pareto, key=lambda x: x[0][0], reverse=True)
 
-        # print(f"Listed {len(self.pareto_outcomes)} pareto outcomes")
-        # print(f"First pareto outcome: {self.pareto_outcomes[0]}")
-        # print(f"Last pareto outcome: {self.pareto_outcomes[-1]}")
-
     def on_preferences_changed(self, changes):
         """
         Called when preferences change. In ANL 2024, this is equivalent with initializing the agent.
@@ -135,13 +132,8 @@ class Group1(SAONegotiator):
         # Initialize the list of pareto outcomes.
         self.get_pareto_outcomes()
 
-        # Statarting bid as the pareto bid with highest utility for us.
+        # Starting bid as the pareto bid with the highest utility for us.
         self.starting_bid_concession = self.pareto_outcomes[0][0][0]
-
-        # Calculate and store the Nash points (we are selecting the first one)
-        self.nash_outcomes = nash_points([self.ufun, self.opponent_ufun],
-                                         pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes.copy())[0])[0][0]
-
 
         ### OPPONENT MODELLING INITIALIZATION ###
 
@@ -560,4 +552,4 @@ class Group1(SAONegotiator):
 if __name__ == "__main__":
     from helpers.runner import run_a_tournament
 
-    run_a_tournament(Group1, small=True, debug=False)
+    run_a_tournament(Group1, small=False, debug=False)

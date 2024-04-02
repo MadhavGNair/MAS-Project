@@ -1,0 +1,94 @@
+{
+  "__weakref__": null,
+  "agreement": [
+    "510_489"
+  ],
+  "annotation": {
+    "n_repetitions": 1,
+    "rep": 0
+  },
+  "broken": false,
+  "current_offer": [
+    "510_489"
+  ],
+  "current_proposer": "n4bE409r9",
+  "current_proposer_agent": null,
+  "effective_scenario_name": "-7104788433885409314",
+  "error_details": "",
+  "execution_time": 1.817737400000624,
+  "has_error": false,
+  "kalai_optimality": 0.7845830077458378,
+  "last_negotiator": "Boulware@0",
+  "last_thread": "",
+  "max_utils": [
+    1.0,
+    1.0
+  ],
+  "max_welfare_optimality": 0.9437140033798656,
+  "mechanism_name": "-7104788433885409314",
+  "mechanism_type": "negmas.sao.mechanism.SAOMechanism",
+  "modified_kalai_optimality": 0.8432500782008698,
+  "n_acceptances": 2,
+  "n_negotiators": 2,
+  "n_repetitions": 1,
+  "n_steps": 1428,
+  "nash_optimality": 0.7845830077458378,
+  "negotiator_ids": [
+    "n4bE409r9",
+    "nX5hiCzU7"
+  ],
+  "negotiator_names": [
+    "Boulware@0",
+    "Conceder@1"
+  ],
+  "negotiator_time_limit": Infinity,
+  "negotiator_times": [
+    0.6606090000532276,
+    0.5851349999829836
+  ],
+  "negotiator_types": [
+    "anl.anl2024.negotiators.builtins.wrappers.Boulware",
+    "anl.anl2024.negotiators.builtins.wrappers.Conceder"
+  ],
+  "new_offerer_agents": [
+    null
+  ],
+  "new_offers": [
+    [
+      "n4bE409r9",
+      [
+        "510_489"
+      ]
+    ]
+  ],
+  "params": null,
+  "pareto_optimality": 0.9832426053610034,
+  "partners": [
+    "Boulware",
+    "Conceder"
+  ],
+  "pend": 0,
+  "pend_per_second": 0,
+  "relative_time": 0.794961511546536,
+  "rep": 0,
+  "reserved_values": [
+    0.24391920995504754,
+    0.292750583641468
+  ],
+  "results": null,
+  "run_id": "-7104788433885409314",
+  "running": false,
+  "scenario": "S0",
+  "started": true,
+  "step": 1135,
+  "step_time_limit": Infinity,
+  "threads": {},
+  "time": 1.8174303999985568,
+  "time_limit": 60,
+  "timedout": false,
+  "utilities": [
+    0.6993223807820576,
+    0.3503413053819036
+  ],
+  "waiting": false
+}

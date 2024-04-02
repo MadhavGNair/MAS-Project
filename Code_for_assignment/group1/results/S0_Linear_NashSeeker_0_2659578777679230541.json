@@ -1,0 +1,94 @@
+{
+  "__weakref__": null,
+  "agreement": [
+    "157_842"
+  ],
+  "annotation": {
+    "n_repetitions": 1,
+    "rep": 0
+  },
+  "broken": false,
+  "current_offer": [
+    "157_842"
+  ],
+  "current_proposer": "nxIL3uMVe",
+  "current_proposer_agent": null,
+  "effective_scenario_name": "2659578777679230541",
+  "error_details": "",
+  "execution_time": 1.241008499997406,
+  "has_error": false,
+  "kalai_optimality": 1.0,
+  "last_negotiator": "Linear@0",
+  "last_thread": "",
+  "max_utils": [
+    1.0,
+    1.0
+  ],
+  "max_welfare_optimality": 0.9851805231893689,
+  "mechanism_name": "2659578777679230541",
+  "mechanism_type": "negmas.sao.mechanism.SAOMechanism",
+  "modified_kalai_optimality": 0.9412080616421057,
+  "n_acceptances": 2,
+  "n_negotiators": 2,
+  "n_repetitions": 1,
+  "n_steps": 1428,
+  "nash_optimality": 1.0,
+  "negotiator_ids": [
+    "nxIL3uMVe",
+    "nCbwl3XKU"
+  ],
+  "negotiator_names": [
+    "Linear@0",
+    "NashSeeker@1"
+  ],
+  "negotiator_time_limit": Infinity,
+  "negotiator_times": [
+    0.4801201000082074,
+    0.29489930006093346
+  ],
+  "negotiator_types": [
+    "anl.anl2024.negotiators.builtins.wrappers.Linear",
+    "anl.anl2024.negotiators.builtins.nash_seeker.NashSeeker"
+  ],
+  "new_offerer_agents": [
+    null
+  ],
+  "new_offers": [
+    [
+      "nxIL3uMVe",
+      [
+        "157_842"
+      ]
+    ]
+  ],
+  "params": null,
+  "pareto_optimality": 1.0,
+  "partners": [
+    "Linear",
+    "NashSeeker"
+  ],
+  "pend": 0,
+  "pend_per_second": 0,
+  "relative_time": 0.6515045486354094,
+  "rep": 0,
+  "reserved_values": [
+    0.24391920995504754,
+    0.292750583641468
+  ],
+  "results": null,
+  "run_id": "2659578777679230541",
+  "running": false,
+  "scenario": "S0",
+  "started": true,
+  "step": 930,
+  "step_time_limit": Infinity,
+  "threads": {},
+  "time": 1.240767200000846,
+  "time_limit": 60,
+  "timedout": false,
+  "utilities": [
+    0.5082042729185127,
+    0.5875813314110667
+  ],
+  "waiting": false
+}

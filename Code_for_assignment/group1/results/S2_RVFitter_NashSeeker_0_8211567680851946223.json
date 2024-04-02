@@ -1,0 +1,94 @@
+{
+  "__weakref__": null,
+  "agreement": [
+    "573_426"
+  ],
+  "annotation": {
+    "n_repetitions": 1,
+    "rep": 0
+  },
+  "broken": false,
+  "current_offer": [
+    "573_426"
+  ],
+  "current_proposer": "n9ptB7OTT",
+  "current_proposer_agent": null,
+  "effective_scenario_name": "8211567680851946223",
+  "error_details": "",
+  "execution_time": 0.0881044000016118,
+  "has_error": false,
+  "kalai_optimality": 0.9056205442226878,
+  "last_negotiator": "RVFitter@0",
+  "last_thread": "",
+  "max_utils": [
+    1.0,
+    1.0
+  ],
+  "max_welfare_optimality": 1.0,
+  "mechanism_name": "8211567680851946223",
+  "mechanism_type": "negmas.sao.mechanism.SAOMechanism",
+  "modified_kalai_optimality": 0.9487722758923577,
+  "n_acceptances": 2,
+  "n_negotiators": 2,
+  "n_repetitions": 1,
+  "n_steps": 4992,
+  "nash_optimality": 0.9620530159751655,
+  "negotiator_ids": [
+    "n9ptB7OTT",
+    "np1xxy7Ab"
+  ],
+  "negotiator_names": [
+    "RVFitter@0",
+    "NashSeeker@1"
+  ],
+  "negotiator_time_limit": Infinity,
+  "negotiator_times": [
+    0.03921769999942626,
+    0.04248729999380885
+  ],
+  "negotiator_types": [
+    "anl.anl2024.negotiators.builtins.rv_fitter.RVFitter",
+    "anl.anl2024.negotiators.builtins.nash_seeker.NashSeeker"
+  ],
+  "new_offerer_agents": [
+    null
+  ],
+  "new_offers": [
+    [
+      "n9ptB7OTT",
+      [
+        "573_426"
+      ]
+    ]
+  ],
+  "params": null,
+  "pareto_optimality": 1.0,
+  "partners": [
+    "RVFitter",
+    "NashSeeker"
+  ],
+  "pend": 0,
+  "pend_per_second": 0,
+  "relative_time": 0.0026036451031444022,
+  "rep": 0,
+  "reserved_values": [
+    0.7169296750081535,
+    0.18230909752420116
+  ],
+  "results": null,
+  "run_id": "8211567680851946223",
+  "running": false,
+  "scenario": "S2",
+  "started": true,
+  "step": 12,
+  "step_time_limit": Infinity,
+  "threads": {},
+  "time": 0.08785880000141333,
+  "time_limit": 60,
+  "timedout": false,
+  "utilities": [
+    0.7805589406090964,
+    0.4335716561961938
+  ],
+  "waiting": false
+}

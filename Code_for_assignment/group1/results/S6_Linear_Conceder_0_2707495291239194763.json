@@ -1,0 +1,94 @@
+{
+  "__weakref__": null,
+  "agreement": [
+    "410_589"
+  ],
+  "annotation": {
+    "n_repetitions": 1,
+    "rep": 0
+  },
+  "broken": false,
+  "current_offer": [
+    "410_589"
+  ],
+  "current_proposer": "n3YT7uusK",
+  "current_proposer_agent": null,
+  "effective_scenario_name": "2707495291239194763",
+  "error_details": "",
+  "execution_time": 3.7209087000010186,
+  "has_error": false,
+  "kalai_optimality": 0.9946055641035244,
+  "last_negotiator": "Linear@0",
+  "last_thread": "",
+  "max_utils": [
+    1.0,
+    1.0
+  ],
+  "max_welfare_optimality": 0.9930461293304059,
+  "mechanism_name": "2707495291239194763",
+  "mechanism_type": "negmas.sao.mechanism.SAOMechanism",
+  "modified_kalai_optimality": 0.9672950466936908,
+  "n_acceptances": 2,
+  "n_negotiators": 2,
+  "n_repetitions": 1,
+  "n_steps": 2828,
+  "nash_optimality": 0.9781162499479588,
+  "negotiator_ids": [
+    "n3YT7uusK",
+    "nh5BWUq9x"
+  ],
+  "negotiator_names": [
+    "Linear@0",
+    "Conceder@1"
+  ],
+  "negotiator_time_limit": Infinity,
+  "negotiator_times": [
+    1.2341156998263614,
+    1.2143766999142827
+  ],
+  "negotiator_types": [
+    "anl.anl2024.negotiators.builtins.wrappers.Linear",
+    "anl.anl2024.negotiators.builtins.wrappers.Conceder"
+  ],
+  "new_offerer_agents": [
+    null
+  ],
+  "new_offers": [
+    [
+      "n3YT7uusK",
+      [
+        "410_589"
+      ]
+    ]
+  ],
+  "params": null,
+  "pareto_optimality": 1.0,
+  "partners": [
+    "Linear",
+    "Conceder"
+  ],
+  "pend": 0,
+  "pend_per_second": 0,
+  "relative_time": 0.9073877695298692,
+  "rep": 0,
+  "reserved_values": [
+    0.551129902768759,
+    0.4995437134189019
+  ],
+  "results": null,
+  "run_id": "2707495291239194763",
+  "running": false,
+  "scenario": "S6",
+  "started": true,
+  "step": 2566,
+  "step_time_limit": Infinity,
+  "threads": {},
+  "time": 3.7206796999998915,
+  "time_limit": 60,
+  "timedout": false,
+  "utilities": [
+    0.5928946734405905,
+    0.5244258395305784
+  ],
+  "waiting": false
+}

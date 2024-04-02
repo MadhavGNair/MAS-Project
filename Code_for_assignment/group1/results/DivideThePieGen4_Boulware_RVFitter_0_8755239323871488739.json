@@ -1,0 +1,94 @@
+{
+  "__weakref__": null,
+  "agreement": [
+    "467_532"
+  ],
+  "annotation": {
+    "n_repetitions": 1,
+    "rep": 0
+  },
+  "broken": false,
+  "current_offer": [
+    "467_532"
+  ],
+  "current_proposer": "nCaN666so",
+  "current_proposer_agent": null,
+  "effective_scenario_name": "8755239323871488739",
+  "error_details": "",
+  "execution_time": 5.9527885999996215,
+  "has_error": false,
+  "kalai_optimality": 0.9758524352427068,
+  "last_negotiator": "Boulware@0",
+  "last_thread": "",
+  "max_utils": [
+    1.0,
+    1.0
+  ],
+  "max_welfare_optimality": 0.9755989421527498,
+  "mechanism_name": "8755239323871488739",
+  "mechanism_type": "negmas.sao.mechanism.SAOMechanism",
+  "modified_kalai_optimality": 0.9505035505445738,
+  "n_acceptances": 2,
+  "n_negotiators": 2,
+  "n_repetitions": 1,
+  "n_steps": 458,
+  "nash_optimality": 0.9452695662385718,
+  "negotiator_ids": [
+    "nCaN666so",
+    "n6mhVMrXX"
+  ],
+  "negotiator_names": [
+    "Boulware@0",
+    "RVFitter@1"
+  ],
+  "negotiator_time_limit": Infinity,
+  "negotiator_times": [
+    0.1982361000700621,
+    5.54557809997641
+  ],
+  "negotiator_types": [
+    "anl.anl2024.negotiators.builtins.wrappers.Boulware",
+    "anl.anl2024.negotiators.builtins.rv_fitter.RVFitter"
+  ],
+  "new_offerer_agents": [
+    null
+  ],
+  "new_offers": [
+    [
+      "nCaN666so",
+      [
+        "467_532"
+      ]
+    ]
+  ],
+  "params": null,
+  "pareto_optimality": 1.0,
+  "partners": [
+    "Boulware",
+    "RVFitter"
+  ],
+  "pend": 0,
+  "pend_per_second": 0,
+  "relative_time": 0.8671023965141612,
+  "rep": 0,
+  "reserved_values": [
+    0.01926807145517011,
+    0.07018770755082612
+  ],
+  "results": null,
+  "run_id": "8755239323871488739",
+  "running": false,
+  "scenario": "DivideThePieGen4",
+  "started": true,
+  "step": 397,
+  "step_time_limit": Infinity,
+  "threads": {},
+  "time": 5.952532999999676,
+  "time_limit": 60,
+  "timedout": false,
+  "utilities": [
+    0.45124743618476604,
+    0.5500894419668453
+  ],
+  "waiting": false
+}
