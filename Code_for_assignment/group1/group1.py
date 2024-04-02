@@ -73,9 +73,9 @@ class Group1(SAONegotiator):
         self.detecting_cells_bounds = list()
 
         self.nr_steps_last_phase = max([3, math.ceil(0.1 * (self.nmi.n_steps - 1))]) if self.nmi.n_steps < 500 else 50
-        self.phases = {1:{'T': self.nmi.n_steps, 'M': 1, 't_offset': 0}, 
-                       2:{'T': self.nmi.n_steps, 'M': 1, 't_offset': 0}, 
-                       3: {'T': self.nmi.n_steps, 'M': 1, 't_offset': 0}}
+        self.phases = {1:{'T': self.nmi.n_steps-1, 'M': 1, 't_offset': 0}, 
+                       2:{'T': self.nmi.n_steps-1, 'M': 1, 't_offset': 0}, 
+                       3: {'T': self.nmi.n_steps-1, 'M': 1, 't_offset': 0}}
         
     def get_pareto_outcomes(self):
         # from rational_outcomes, select pareto optimal outcomes using the multi-layer pareto strategy
