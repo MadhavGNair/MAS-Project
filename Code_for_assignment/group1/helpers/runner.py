@@ -54,10 +54,10 @@ def run_a_tournament(
     )
     if small:
         anl2024_tournament(
-            competitors=tuple([TestedNegotiator, NashSeeker]),
-            n_scenarios=4,
+            competitors=tuple([TestedNegotiator] + list(DEFAULT_AN2024_COMPETITORS) ),
+            n_scenarios=10,
             n_outcomes=n_outcomes,
-            n_repetitions=2,
+            n_repetitions=1,
             njobs=-1 if debug else 0,
             verbosity=2 if debug else 1,
             plot_fraction=1,
