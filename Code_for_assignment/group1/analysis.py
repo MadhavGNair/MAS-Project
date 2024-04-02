@@ -4,8 +4,8 @@ import csv
 import matplotlib.pyplot as plt
 
 # Define the folder containing JSON files
-folder_path = 'D:/Madhav/University/Period 3/Multi Agent System/MAS-Project/Code_for_assignment/group1/results'
-plot_path = 'D:/Madhav/University/Period 3/Multi Agent System/MAS-Project/Code_for_assignment/plots'
+folder_path = '/home/carricossauro/negmas/anl2024/tournaments/2nd/results'
+plot_path = '/home/carricossauro/uu/MAS/MAS-Project/Code_for_assignment/group1/plots'
 
 results = {'Group1': {'agreements': 0,
                       'timeouts': 0,
@@ -283,6 +283,7 @@ for group_key in results:
             results[group_key][key] /= group_count
 
 def plot_nash_optimality(dictionary):
+    plt.figure()
     x_values = ['Group1', 'Group1 (not final bid)', 'Group1 (final bid)' , 'Boulware', 'Conceder',
                 'Linear', 'RVFitter', 'MiCRO', 'NashSeeker']
     y_values = []
@@ -302,6 +303,7 @@ def plot_nash_optimality(dictionary):
     plt.savefig(plot_path + '/nash_optimality.png')
 
 def plot_advantage(dictionary):
+    plt.figure()
     x_values = ['Group1', 'Group1 (not final bid)', 'Group1 (final bid)' , 'Boulware', 'Conceder',
                 'Linear', 'RVFitter', 'MiCRO', 'NashSeeker']
     y_values = []
@@ -321,6 +323,7 @@ def plot_advantage(dictionary):
     plt.savefig(plot_path + '/advantage.png')
 
 def plot_agreement(dictionary):
+    plt.figure()
     x_values = ['Group1', 'Group1 (not final bid)', 'Group1 (final bid)' , 'Boulware', 'Conceder',
                 'Linear', 'RVFitter', 'MiCRO', 'NashSeeker']
     y_values = []
@@ -341,6 +344,7 @@ def plot_agreement(dictionary):
     plt.plot()
 
 def plot_timeouts(dictionary):
+    plt.figure()
     x_values = ['Group1', 'Group1 (not final bid)', 'Group1 (final bid)' , 'Boulware', 'Conceder',
                 'Linear', 'RVFitter', 'MiCRO', 'NashSeeker']
     y_values = []
@@ -361,6 +365,7 @@ def plot_timeouts(dictionary):
     plt.plot()
 
 def plot_advantage_opp(dictionary):
+    plt.figure()
     x_values = ['Group1', 'Group1 (not final bid)', 'Group1 (final bid)' , 'Boulware', 'Conceder',
                 'Linear', 'RVFitter', 'MiCRO', 'NashSeeker']
     y_values = []
@@ -380,6 +385,7 @@ def plot_advantage_opp(dictionary):
     plt.savefig(plot_path + '/advantage_opponent.png')
 
 def plot_pareto(dictionary):
+    plt.figure()
     x_values = ['Group1', 'Group1 (not final bid)', 'Group1 (final bid)' , 'Boulware', 'Conceder',
                 'Linear', 'RVFitter', 'MiCRO', 'NashSeeker']
     y_values = []
