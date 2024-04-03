@@ -11,7 +11,7 @@ import random
 
 from negmas.outcomes import Outcome
 from negmas.sao import ResponseType, SAONegotiator, SAOResponse, SAOState
-from negmas.preferences import pareto_frontier, nash_points
+from negmas.preferences import pareto_frontier
 import numpy as np
 np.seterr(all='raise')
 
@@ -37,7 +37,7 @@ class Group1(SAONegotiator):
 
     deactivate_opponent_modelling: bool = False
     verbosity_opponent_modelling: int = 0
-    opponent_reserved_value: int
+    opponent_reserved_value: float
     opp_model_started: bool  
     nr_opponent_rv_updates: int 
     opponent_bid_history: list[Outcome]
@@ -50,13 +50,16 @@ class Group1(SAONegotiator):
     detecting_cells_prob: np.array
     
     def reset_variables(self):
+        """
+        Function that resets all variables. Also prevents data leakage between negotiations (should never happen in
+        theory).
+        """
         self.concession_threshold = 1
         self.phase = 1
         self.rational_outcomes = list()
         self.pareto_outcomes = list()
         self.pareto_utilities = list()
         self.pareto_indices = list()
-        self.nash_outcomes = list()
         self.utility_history_bidded_by_self = list()
         self.differences_bidded_by_self = list()
         self.utility_history_bidded_by_opp = list()
@@ -150,12 +153,8 @@ class Group1(SAONegotiator):
         # Initialize the list of pareto outcomes.
         self.get_pareto_outcomes()
 
-        # Statarting bid as the pareto bid with highest utility for us.
+        # Statarting bid as the pareto bid with the highest utility for us.
         self.starting_bid_concession = self.pareto_outcomes[0][0][0]
-
-        # Calculate and store the Nash points (we are selecting the first one)
-        self.nash_outcomes = nash_points([self.ufun, self.opponent_ufun],
-                                         pareto_frontier([self.ufun, self.opponent_ufun], self.rational_outcomes.copy())[0])[0][0]
 
 
         ### OPPONENT MODELLING INITIALIZATION ###
@@ -201,16 +200,12 @@ class Group1(SAONegotiator):
             else:
                 self.opponent_ends = False
 
-        # Compute the current phase (first or second half of negotiation)
+        # Compute the current phase
         self.compute_phase(state)
 
         # Save opponent's history of bids and utilities. Update utilities differences.
         if offer is not None:
             self.opponent_bid_history.append(offer)
-            """ if len(self.opponent_utility_history_bidded_by_opp) > 0 and self.opponent_ufun(offer) > self.opponent_utility_history_bidded_by_opp[0]:
-                self.opponent_utility_history_bidded_by_opp.append(self.opponent_utility_history_bidded_by_opp[-1])
-            else:
-                self.opponent_utility_history_bidded_by_opp.append(self.opponent_ufun(offer)) """
 
             self.opponent_utility_history_bidded_by_opp.append(self.opponent_ufun(offer))
             self.utility_history_bidded_by_opp.append(self.ufun(offer))
@@ -260,11 +255,19 @@ class Group1(SAONegotiator):
         return SAOResponse(ResponseType.REJECT_OFFER, bid)
 
     def get_normalized_advantage(self, utility: float) -> float:
+        """
+        Function to compute the normalized advantage of a given offer utility.
+        Args:
+            utility: the utility for us from the proposed offer
+
+        Returns: the normalized advantage
+
+        """
         return (utility - self.ufun.reserved_value)/(self.pareto_outcomes[0][0][0] - self.ufun.reserved_value)
 
-    def compute_phase(self, state: SAOState) -> int:
+    def compute_phase(self, state: SAOState):
         """
-        Function to compute the current phase of negotiation. First half is Phase 1, the next 1/4th is Phase 2, and
+        Function to compute the current phase of negotiation. First 80% is Phase 1, the next 12.5% is Phase 2, and
         the remaining steps is Phase 3.
         Args:
             state (SAOState): the `SAOState` containing the offer from your partner (None if you are just starting the negotiation)
@@ -285,7 +288,8 @@ class Group1(SAONegotiator):
 
     def compute_concession(self, state: SAOState):
         """
-        This function determines the acceptance curve point at the current time step.
+        Function to determine the concession threshold for acceptance and bidding based on the current phase of
+        negotiation.
 
         Args:
             state (SAOState): the `SAOState` containing the offer from your partner (None if you are just starting the negotiation)
@@ -312,8 +316,10 @@ class Group1(SAONegotiator):
 
     def acceptance_strategy(self, state: SAOState) -> bool:
         """
-        This is one of the functions you need to implement.
-        It should determine whether to accept the offer.
+        Function to determine whether to accept or reject an offer proposed by the opponent.
+        The strategy is to accept bids that (1) provide a large enough change in advantage from the advantage from the
+        previous offer proposed by the opponent and (2) provide utility above the concession threshold. Reject all other
+        offers.
 
         Parameters:
             state (SAOState): the `SAOState` containing the offer from your partner (None if you are just starting the negotiation)
@@ -344,13 +350,6 @@ class Group1(SAONegotiator):
     def bidding_strategy(self, state: SAOState) -> Outcome | None:
         """
         This function implements how (counter-)offers are made.
-        The basic idea is to filter bids that are on the Pareto frontier, that gives us better utility that Nash point,
-        that gives utility above both our and the opponent's reservation value, and above the concession threshold.
-        One caveat is that, if we have the final bid, in the last few steps (last 5%), we will bid bids that are slightly
-        above the opponent's reservation estimate, but gives us the highest utility.
-        Once a bid has been made, it is removed from the list of bids so that it is not offered again. However, once all
-        possible bids have been made, and no agreement has been reached, the pareto frontier is recomputed and bids are
-        recycled.
 
         Args:
             state (SAOState): the `SAOState` containing the offer from your partner (None if you are just starting the negotiation)
@@ -496,8 +495,8 @@ class Group1(SAONegotiator):
         This function updates the opponent reserved value when it is assumed to be following a time concession strategy.
         In order to do that, the following steps are done:
             1. Create a detecting region at the known deadline with possible reservation values. 
-               Initilize a prior distribution for the detecting region.
-            2. Fit different polinomial concession curves using the different reservation values and 
+               Initialize a prior distribution for the detecting region.
+            2. Fit different polynomial concession curves using the different reservation values and
                a beta value computed by regression with the opponent bid history.
             3. Compute the correlatation between the curves and the bid history.
             4. Use those correlations as the likelihoods of each reservation value (i.e. each detecting cell) 
@@ -536,7 +535,7 @@ class Group1(SAONegotiator):
 
         def fitted_beta(reservation_value: float) -> float:
             """
-            Compute the parameter of beta by non linear regression as shown in formula 6 of Yu et al.
+            Compute the parameter of beta by non-linear regression as shown in formula 6 of Yu et al.
 
             """
             p_i = np.log([(max(self.opponent_utility_history_bidded_by_opp) - self.opponent_utility_history_bidded_by_opp[t])/(max(self.opponent_utility_history_bidded_by_opp) - reservation_value) 
@@ -551,31 +550,9 @@ class Group1(SAONegotiator):
             else:
                 return beta
 
-        def fitted_alpha(reservation_value):
-            max_utility = max(self.opponent_utility_history_bidded_by_opp)  # maximum utility achieved by the opponent
-            current_utility = self.opponent_utility_history_bidded_by_opp[-1]  # current utility, opponent
-            current_step = state.step
-            # Take the last utility different from the current and the corresponding time step
-            for k in range(2, len(self.opponent_utility_history_bidded_by_opp)):
-                previous_utility = self.opponent_utility_history_bidded_by_opp[-k]
-                if abs(current_utility-previous_utility)>1e-10:
-                    previous_step = current_step - k+1
-                    break
-            alpha =  math.log((max_utility - current_utility)/(max_utility - previous_utility)) / math.log( current_step / previous_step) # equation 8 Zhang et al.
-            if alpha !=0:
-                if alpha>100:
-                    if self.verbosity_opponent_modelling > 1: print("Alpha adjusted to 100")
-                    return 100
-                else:
-                    return alpha
-            else:
-                if self.verbosity_opponent_modelling > 1: 
-                    print(f"Null alpha in step {state.step} because the log argument is {(max_utility - current_utility)/(max_utility - previous_utility)}")
-                return 0.001
-
         def non_linear_correlation(reservation_value: float) -> float:
             """
-            Compute the non linear correlation between the fitted concesion and the bid history
+            Compute the non-linear correlation between the fitted concession and the bid history
 
             Args:
                 reservation_value: The assumed reservation value of the fitted concession curve.

@@ -75,7 +75,6 @@ def run_a_tournament(
             plot_fraction=0,
             name=name,
             scenario_generator="mix"
-
         ).final_scores
     print(f"Finished in {humanize_time(time.perf_counter() - start)}")
     if name is not None:
