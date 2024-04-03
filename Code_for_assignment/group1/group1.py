@@ -71,6 +71,11 @@ class Group1(SAONegotiator):
         self.opponent_rv_upper_bound = 1
         self.opponent_rv_lower_bound = 0
         self.detecting_cells_bounds = list()
+
+        self.nr_steps_last_phase = max([3, math.ceil(0.1 * (self.nmi.n_steps - 1))]) if self.nmi.n_steps < 500 else 50
+        self.phases = {1:{'T': self.nmi.n_steps, 'M': 1, 't_offset': 0}, 
+                       2:{'T': self.nmi.n_steps, 'M': 1, 't_offset': 0}, 
+                       3: {'T': self.nmi.n_steps, 'M': 1, 't_offset': 0}}
         
     def get_pareto_outcomes(self):
         """
@@ -86,7 +91,7 @@ class Group1(SAONegotiator):
         Raises:
             None
         """
-        pareto_count = self.nmi.n_outcomes * 0.25
+        pareto_count = len(self.rational_outcomes) * 0.25
         self.pareto_utilities, self.pareto_indices = [], []
 
         rational_copy = self.rational_outcomes.copy()
@@ -220,6 +225,7 @@ class Group1(SAONegotiator):
                 if self.verbosity_opponent_modelling > 3:
                     print(f"(opp ends={self.opponent_ends}) Step {state.step} (Rel t = {state.relative_time}): \
                         Behaviour criterion = {self.compute_behaviour_criterion()}, Time criterion = {time_criterion}")
+                    
                 # Start the opponent modelling when the time-dependency criterion is satisfied and opponent has proposed at least 3 different bids.
                 if not self.opp_model_started:
                     if time_criterion > 0.5 and len(np.unique(self.opponent_utility_history_bidded_by_opp)) > 2:
@@ -249,6 +255,9 @@ class Group1(SAONegotiator):
                                     utility_history=self.utility_history_bidded_by_self,
                                     max_order=2)
         return SAOResponse(ResponseType.REJECT_OFFER, bid)
+
+    def get_normalized_advantage(self, utility: float) -> float:
+        return (utility - self.ufun.reserved_value)/(self.pareto_outcomes[0][0][0] - self.ufun.reserved_value)
 
     def compute_phase(self, state: SAOState) -> int:
         """
@@ -280,9 +289,9 @@ class Group1(SAONegotiator):
                 and other information about the negotiation (e.g. current step, relative time, etc.).
         """
         m = self.ufun.reserved_value
-        T = self.nmi.n_steps
         t = state.step
         M = self.pareto_outcomes[0][0][0]
+        T = self.nmi.n_steps
 
         if self.phase == 1:
             # beta value in phase 1
@@ -292,9 +301,9 @@ class Group1(SAONegotiator):
         elif self.phase == 2 and not self.opponent_ends:
             beta = 4.5
         elif self.phase == 3 and self.opponent_ends:
-            beta = 1
+            beta = 0.5
         else:
-            beta = 1.5
+            beta = 1
             
         self.concession_threshold = M - ((M - m) * pow(t/T,  beta))
 
@@ -317,10 +326,11 @@ class Group1(SAONegotiator):
         if offer is None:
             return False
         
-        # Accept big changes in our favour
-        acceptable_utility_difference = [.5, .3] # We need a bigger change to be acceptable when we end.
-        if self.differences_bidded_by_opp:
-            if self.differences_bidded_by_opp[0][-1] > acceptable_utility_difference[int(self.opponent_ends)] and offer_utility >= self.concession_threshold:
+        # Accept big changes in normalized advantages in our favour
+        acceptable_advantage_difference = [.3, .2] # We need a bigger change to be acceptable when we end
+        if len(self.utility_history_bidded_by_opp) >1:
+            if self.get_normalized_advantage(self.utility_history_bidded_by_opp[-1]) - max([self.get_normalized_advantage(self.utility_history_bidded_by_opp[-2]), 0]) > acceptable_advantage_difference[int(self.opponent_ends)] \
+            and self.get_normalized_advantage(self.utility_history_bidded_by_opp[-1]) > 0:
                 return True
 
         # Accept only offers above the concession threshold

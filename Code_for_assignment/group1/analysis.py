@@ -187,22 +187,22 @@ for filename in os.listdir(folder_path):
                         results['Group1_final_bid']['agreements'] += 1
                     else:
                         results['Group1_final_bid']['timeouts'] += 1
-                    results['Group1_final_bid']['advantage'] += ((data['utilities'][0] - data['reserved_values'][0]) /
-                                                                 (data['max_utils'][0] - data['reserved_values'][0]))
+                    results['Group1_final_bid']['advantage'] += ((data['utilities'][1] - data['reserved_values'][1]) /
+                                                                 (data['max_utils'][1] - data['reserved_values'][1]))
                     results['Group1_final_bid']['advantage_opponent'] += (
-                            (data['utilities'][1] - data['reserved_values'][1]) /
-                            (data['max_utils'][1] - data['reserved_values'][1]))
+                            (data['utilities'][0] - data['reserved_values'][0]) /
+                            (data['max_utils'][0] - data['reserved_values'][0]))
                     results['Group1_final_bid']['nash optimality'] += data['nash_optimality']
                     results['Group1_final_bid']['pareto optimality'] += data['pareto_optimality']
                 if data['agreement'] is not None:
                     results['Group1']['agreements'] += 1
                 else:
                     results['Group1']['timeouts'] += 1
-                results['Group1']['advantage'] += ((data['utilities'][0] - data['reserved_values'][0]) /
-                                                   (data['max_utils'][0] - data['reserved_values'][0]))
+                results['Group1']['advantage'] += ((data['utilities'][1] - data['reserved_values'][1]) /
+                                                   (data['max_utils'][1] - data['reserved_values'][1]))
                 results['Group1']['advantage_opponent'] += (
-                        (data['utilities'][1] - data['reserved_values'][1]) /
-                        (data['max_utils'][1] - data['reserved_values'][1]))
+                        (data['utilities'][0] - data['reserved_values'][0]) /
+                        (data['max_utils'][0] - data['reserved_values'][0]))
                 results['Group1']['nash optimality'] += data['nash_optimality']
                 results['Group1']['pareto optimality'] += data['pareto_optimality']
             case 'B':
@@ -214,10 +214,10 @@ for filename in os.listdir(folder_path):
                     total_timeout_count += 1
                     second_timeout_count += 1
                     results['Boulware']['timeouts'] += 1
-                results['Boulware']['advantage'] += ((data['utilities'][0] - data['reserved_values'][0]) /
-                                                     (data['max_utils'][0] - data['reserved_values'][0]))
-                results['Boulware']['advantage_opponent'] += ((data['utilities'][1] - data['reserved_values'][1]) /
-                                                              (data['max_utils'][1] - data['reserved_values'][1]))
+                results['Boulware']['advantage'] += ((data['utilities'][1] - data['reserved_values'][1]) /
+                                                     (data['max_utils'][1] - data['reserved_values'][1]))
+                results['Boulware']['advantage_opponent'] += ((data['utilities'][0] - data['reserved_values'][0]) /
+                                                              (data['max_utils'][0] - data['reserved_values'][0]))
                 results['Boulware']['nash optimality'] += data['nash_optimality']
                 results['Boulware']['pareto optimality'] += data['pareto_optimality']
             case 'C':
@@ -225,10 +225,10 @@ for filename in os.listdir(folder_path):
                     results['Conceder']['agreements'] += 1
                 else:
                     results['Conceder']['timeouts'] += 1
-                results['Conceder']['advantage'] += ((data['utilities'][0] - data['reserved_values'][0]) /
-                                                     (data['max_utils'][0] - data['reserved_values'][0]))
-                results['Conceder']['advantage_opponent'] += ((data['utilities'][1] - data['reserved_values'][1]) /
-                                                              (data['max_utils'][1] - data['reserved_values'][1]))
+                results['Conceder']['advantage'] += ((data['utilities'][1] - data['reserved_values'][1]) /
+                                                     (data['max_utils'][1] - data['reserved_values'][1]))
+                results['Conceder']['advantage_opponent'] += ((data['utilities'][0] - data['reserved_values'][0]) /
+                                                              (data['max_utils'][0] - data['reserved_values'][0]))
                 results['Conceder']['nash optimality'] += data['nash_optimality']
                 results['Conceder']['pareto optimality'] += data['pareto_optimality']
             case 'L':
@@ -236,10 +236,10 @@ for filename in os.listdir(folder_path):
                     results['Linear']['agreements'] += 1
                 else:
                     results['Linear']['timeouts'] += 1
-                results['Linear']['advantage'] += ((data['utilities'][0] - data['reserved_values'][0]) /
-                                                   (data['max_utils'][0] - data['reserved_values'][0]))
-                results['Linear']['advantage_opponent'] += ((data['utilities'][1] - data['reserved_values'][1]) /
-                                                            (data['max_utils'][1] - data['reserved_values'][1]))
+                results['Linear']['advantage'] += ((data['utilities'][1] - data['reserved_values'][1]) /
+                                                   (data['max_utils'][1] - data['reserved_values'][1]))
+                results['Linear']['advantage_opponent'] += ((data['utilities'][0] - data['reserved_values'][0]) /
+                                                            (data['max_utils'][0] - data['reserved_values'][0]))
                 results['Linear']['nash optimality'] += data['nash_optimality']
                 results['Linear']['pareto optimality'] += data['pareto_optimality']
             case 'R':
@@ -247,10 +247,10 @@ for filename in os.listdir(folder_path):
                     results['RVFitter']['agreements'] += 1
                 else:
                     results['RVFitter']['timeouts'] += 1
-                results['RVFitter']['advantage'] += ((data['utilities'][0] - data['reserved_values'][0]) /
-                                                     (data['max_utils'][0] - data['reserved_values'][0]))
-                results['RVFitter']['advantage_opponent'] += ((data['utilities'][1] - data['reserved_values'][1]) /
-                                                              (data['max_utils'][1] - data['reserved_values'][1]))
+                results['RVFitter']['advantage'] += ((data['utilities'][1] - data['reserved_values'][1]) /
+                                                     (data['max_utils'][1] - data['reserved_values'][1]))
+                results['RVFitter']['advantage_opponent'] += ((data['utilities'][0] - data['reserved_values'][0]) /
+                                                              (data['max_utils'][0] - data['reserved_values'][0]))
                 results['RVFitter']['nash optimality'] += data['nash_optimality']
                 results['RVFitter']['pareto optimality'] += data['pareto_optimality']
             case 'M':
@@ -258,10 +258,10 @@ for filename in os.listdir(folder_path):
                     results['MiCRO']['agreements'] += 1
                 else:
                     results['MiCRO']['timeouts'] += 1
-                results['MiCRO']['advantage'] += ((data['utilities'][0] - data['reserved_values'][0]) /
-                                                  (data['max_utils'][0] - data['reserved_values'][0]))
-                results['MiCRO']['advantage_opponent'] += ((data['utilities'][1] - data['reserved_values'][1]) /
-                                                           (data['max_utils'][1] - data['reserved_values'][1]))
+                results['MiCRO']['advantage'] += ((data['utilities'][1] - data['reserved_values'][1]) /
+                                                  (data['max_utils'][1] - data['reserved_values'][1]))
+                results['MiCRO']['advantage_opponent'] += ((data['utilities'][0] - data['reserved_values'][0]) /
+                                                           (data['max_utils'][0] - data['reserved_values'][0]))
                 results['MiCRO']['nash optimality'] += data['nash_optimality']
                 results['MiCRO']['pareto optimality'] += data['pareto_optimality']
             case 'N':
@@ -269,10 +269,10 @@ for filename in os.listdir(folder_path):
                     results['NashSeeker']['agreements'] += 1
                 else:
                     results['NashSeeker']['timeouts'] += 1
-                results['NashSeeker']['advantage'] += ((data['utilities'][0] - data['reserved_values'][0]) /
-                                                       (data['max_utils'][0] - data['reserved_values'][0]))
-                results['NashSeeker']['advantage_opponent'] += ((data['utilities'][1] - data['reserved_values'][1]) /
-                                                                (data['max_utils'][1] - data['reserved_values'][1]))
+                results['NashSeeker']['advantage'] += ((data['utilities'][1] - data['reserved_values'][1]) /
+                                                       (data['max_utils'][1] - data['reserved_values'][1]))
+                results['NashSeeker']['advantage_opponent'] += ((data['utilities'][0] - data['reserved_values'][0]) /
+                                                                (data['max_utils'][0] - data['reserved_values'][0]))
                 results['NashSeeker']['nash optimality'] += data['nash_optimality']
                 results['NashSeeker']['pareto optimality'] += data['pareto_optimality']
 
@@ -300,7 +300,6 @@ def plot_nash_optimality(dictionary):
     plt.ylabel('Nash Optimality')
     plt.ylim(0, 1.0)
     plt.xticks(rotation=15)
-    plt.title('Average Nash Optimality for different Negotiating Agents')
     plt.savefig(plot_path + '/nash_optimality.png')
 
 def plot_advantage(dictionary):
@@ -320,8 +319,9 @@ def plot_advantage(dictionary):
     plt.ylabel('Normalized Advantage')
     plt.ylim(0, 1.0)
     plt.xticks(rotation=15)
-    plt.title('Average Advantage for different Negotiating Agents')
-    plt.savefig(plot_path + '/advantage.png')
+    figure = plt.gcf()
+    figure.set_size_inches(18.5, 10.5)
+    plt.savefig(plot_path + '/advantage.png', dpi=500)
 
 def plot_agreement(dictionary):
     plt.figure()
@@ -340,8 +340,9 @@ def plot_agreement(dictionary):
     plt.ylabel('Agreements (%)')
     plt.ylim(0, 1.0)
     plt.xticks(rotation=15)
-    plt.title('Average Agreements for different Negotiating Agents')
-    plt.savefig(plot_path + '/agreements.png')
+    figure = plt.gcf()
+    figure.set_size_inches(18.5, 10.5)
+    plt.savefig(plot_path + '/agreements.png', dpi=500)
     plt.plot()
 
 def plot_timeouts(dictionary):
@@ -361,8 +362,9 @@ def plot_timeouts(dictionary):
     plt.ylabel('Timeouts (%)')
     plt.ylim(0, 1.0)
     plt.xticks(rotation=15)
-    plt.title('Average Timeouts for different Negotiating Agents')
-    plt.savefig(plot_path + '/timeouts.png')
+    figure = plt.gcf()
+    figure.set_size_inches(18.5, 10.5)
+    plt.savefig(plot_path + '/timeouts.png', dpi=500)
     plt.plot()
 
 def plot_advantage_opp(dictionary):
@@ -382,8 +384,9 @@ def plot_advantage_opp(dictionary):
     plt.ylabel("Opponent's Advantage")
     plt.ylim(0, 1.0)
     plt.xticks(rotation=15)
-    plt.title("Average Opponent's Advantage for different Negotiating Agents")
-    plt.savefig(plot_path + '/advantage_opponent.png')
+    figure = plt.gcf()
+    figure.set_size_inches(18.5, 10.5)
+    plt.savefig(plot_path + '/advantage_opponent.png', dpi=500)
 
 def plot_pareto(dictionary):
     plt.figure()
@@ -402,8 +405,9 @@ def plot_pareto(dictionary):
     plt.ylabel('Pareto Optimality')
     plt.ylim(0, 1.0)
     plt.xticks(rotation=15)
-    plt.title('Average Pareto Optimality for different Negotiating Agents')
-    plt.savefig(plot_path + '/pareto_optimality.png')
+    figure = plt.gcf()
+    figure.set_size_inches(18.5, 10.5)
+    plt.savefig(plot_path + '/pareto_optimality.png', dpi=500)
 
 
 def plot_all(dictionary):
