@@ -39,7 +39,8 @@ class Group1(SAONegotiator):
     nr_steps_last_phase: int
     debug: bool = True
 
-    verbosity_opponent_modelling: int = 1
+    deactivate_opponent_modelling: bool = True
+    verbosity_opponent_modelling: int = 0
     opponent_reserved_value: int
     opp_model_started: bool  
     nr_opponent_rv_updates: int 
@@ -191,29 +192,30 @@ class Group1(SAONegotiator):
             else:
                 self.opponent_utility_history_bidded_by_opp.append(self.opponent_ufun(offer))
             self.utility_history_bidded_by_opp.append(self.ufun(offer))
-        if len(self.opponent_utility_history_bidded_by_opp) > 1:
-            self.update_differences(differences=self.opponent_differences_bidded_by_opp, 
-                                    utility_history=self.opponent_utility_history_bidded_by_opp)
-            self.update_differences(differences=self.differences_bidded_by_opp, 
-                                    utility_history=self.utility_history_bidded_by_opp,
-                                    max_order=2)
 
-        # Compute time-dependency criterion
-        if len(self.opponent_differences_bidded_by_opp) > 1:
-            time_criterion = self.compute_time_criterion(differences=self.opponent_differences_bidded_by_opp)
-            if self.verbosity_opponent_modelling > 3:
-                print(f"(opp ends={self.opponent_ends}) Step {state.step} (Rel t = {state.relative_time}): \
-                       Behaviour criterion = {self.compute_behaviour_criterion()}, Time criterion = {time_criterion}")
-            # Start the opponent modelling when the time-dependency criterion is satisfied and opponent has proposed at least 3 different bids.
-            if not self.opp_model_started:
-                if time_criterion > 0.5 and len(np.unique(self.opponent_utility_history_bidded_by_opp)) > 2:
-                    self.opp_model_first_step = state.step
-                    self.opp_model_started = True
-                    if self.verbosity_opponent_modelling > 0:
-                        print(f"(Opponent ends={self.opponent_ends}) Opponent modelling started in step {state.step} \
-                                (Rel time = {state.relative_time}) with time criterion {time_criterion}")
-        if self.opp_model_started:
-            self.update_partner_reserved_value(state)
+        if not self.deactivate_opponent_modelling:
+            if len(self.opponent_utility_history_bidded_by_opp) > 1:
+                self.update_differences(differences=self.opponent_differences_bidded_by_opp, 
+                                        utility_history=self.opponent_utility_history_bidded_by_opp)
+                self.update_differences(differences=self.differences_bidded_by_opp, 
+                                        utility_history=self.utility_history_bidded_by_opp,
+                                        max_order=2)
+            # Compute time-dependency criterion
+            if len(self.opponent_differences_bidded_by_opp) > 1:
+                time_criterion = self.compute_time_criterion(differences=self.opponent_differences_bidded_by_opp)
+                if self.verbosity_opponent_modelling > 3:
+                    print(f"(opp ends={self.opponent_ends}) Step {state.step} (Rel t = {state.relative_time}): \
+                        Behaviour criterion = {self.compute_behaviour_criterion()}, Time criterion = {time_criterion}")
+                # Start the opponent modelling when the time-dependency criterion is satisfied and opponent has proposed at least 3 different bids.
+                if not self.opp_model_started:
+                    if time_criterion > 0.5 and len(np.unique(self.opponent_utility_history_bidded_by_opp)) > 2:
+                        self.opp_model_first_step = state.step
+                        self.opp_model_started = True
+                        if self.verbosity_opponent_modelling > 0:
+                            print(f"(Opponent ends={self.opponent_ends}) Opponent modelling started in step {state.step} \
+                                    (Rel time = {state.relative_time}) with time criterion {time_criterion}")
+            if self.opp_model_started:
+                self.update_partner_reserved_value(state)
 
         # if there are no outcomes (should in theory never happen)
         if self.ufun is None:
@@ -270,32 +272,13 @@ class Group1(SAONegotiator):
                     and other information about the negotiation (e.g. current step, relative time, etc.).
                 current_phase: the current phase of negotiation
             """
-            m = self.ufun.reserved_value
+            max_utility = self.starting_bid_concession
+            min_utility = self.ufun.reserved_value
             T = self.nmi.n_steps
             beta = 8
             t = state.step
-            return 1 - ((1 - m) * pow(t/T, beta))
-
-            m = self.ufun.reserved_value
-            if current_phase == 1:
-                x = state.step
-                T = self.nmi.n_steps
-                M = 1
-                beta = 10
-            else:
-                x = state.step - self.acceptance_concession_phase[current_phase - 1][1]
-                T = self.nmi.n_steps - self.acceptance_concession_phase[current_phase - 1][1]
-                M = self.acceptance_concession_phase[current_phase - 1][0]
-
-                if current_phase == 2:
-                    beta = 2
-                else:
-                    beta = 1
-
-            self.acceptance_concession_phase[current_phase] = (M - ((M - m) * pow(x/T, beta)), state.step)
-
-            return self.acceptance_concession_phase[current_phase][0]
-
+            return max_utility - ((max_utility  - min_utility) * pow(t/T, beta))
+    
     def acceptance_strategy(self, state: SAOState, concession_threshold) -> bool:
         """
         This is one of the functions you need to implement.
@@ -360,26 +343,7 @@ class Group1(SAONegotiator):
         beta = 7
         t = state.step
         return max_utility - ((max_utility  - min_utility) * pow(t/T, beta))
-
-        if current_phase == 1:
-            t = state.step
-            T = self.nmi.n_steps
-            M = 1
-            beta = 2
-        else:
-            t = state.step - self.bidding_concession_phase[current_phase - 1][1]
-            T = self.nmi.n_steps - self.bidding_concession_phase[current_phase - 1][1]
-            M = self.bidding_concession_phase[current_phase - 1][0]
-
-            if current_phase == 2:
-                beta = 1
-            else:
-                beta = 1.5
-
-        self.bidding_concession_phase[current_phase] = (M - ((M - min_utility) * pow(t/T, beta)), state.step)
-
-        return self.bidding_concession_phase[current_phase][0]
-
+    
     def bidding_strategy(self, state: SAOState, concession_threshold) -> Outcome | None:
         """
         This function implements how (counter-)offers are made.
@@ -641,4 +605,4 @@ class Group1(SAONegotiator):
 if __name__ == "__main__":
     from helpers.runner import run_a_tournament
 
-    run_a_tournament(Group1, small=True, debug=False)
+    run_a_tournament(Group1, small=False, debug=False)
