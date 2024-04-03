@@ -73,22 +73,33 @@ class Group1(SAONegotiator):
         self.detecting_cells_bounds = list()
         
     def get_pareto_outcomes(self):
-        # from rational_outcomes, select pareto optimal outcomes using the multi-layer pareto strategy
-        # the strategy is to set a threshold of pseudo-pareto outcomes. If the initial layer does not have
-        # threshold amount of outcomes, removes that layer and calculate the next best pareto outcomes,
-        # (hence pseudo), until the threshold is reached. Set threshold to 0 to get first frontier.
+        """
+        Retrieves the pseudo-Pareto optimal outcomes using the multi-layer Pareto strategy.
+
+        The strategy sets a threshold of pseudo-Pareto outcomes. If the initial layer does not have
+        the threshold amount of outcomes, that layer is removed and the next best Pareto outcomes are calculated
+        (hence pseudo), until the threshold is reached. Setting the threshold to 0 returns the first frontier.
+
+        Returns:
+            None
+
+        Raises:
+            None
+        """
         pareto_count = self.nmi.n_outcomes * 0.25
         self.pareto_utilities, self.pareto_indices = [], []
 
         rational_copy = self.rational_outcomes.copy()
 
-        while len(self.pareto_utilities) < pareto_count or pareto_count == 0 :
-            # recompute new pareto layer
+        while len(self.pareto_utilities) < pareto_count or pareto_count == 0:
+            # recompute new Pareto layer
             utilities, indices = map(list, pareto_frontier([self.ufun, self.opponent_ufun], rational_copy))
 
+            # if there are no more outcomes, stop looking
             if len(utilities) == 0:
                 break
 
+            # store outcome utilities and indices
             for idx in range(len(indices)):
                 outcome = rational_copy[indices[idx]]
                 index_in_rational_outcomes = self.rational_outcomes.index(outcome)
@@ -96,12 +107,14 @@ class Group1(SAONegotiator):
                 self.pareto_utilities.append(utilities[idx])
                 self.pareto_indices.append(index_in_rational_outcomes)
 
+            # remove the outcomes that were already added to the Pareto frontier
             rational_copy = [outcome for idx, outcome in enumerate(rational_copy) if idx not in indices]
 
+            # stop if there are no more possible outcomes
             if len(rational_copy) == 0:
                 break
 
-        # sort pareto_utilities and pareto_indices in descending order
+        # sort pareto_utilities and pareto_indices in descending order of our utility
         combined_pareto = list(zip(self.pareto_utilities, self.pareto_indices))
         self.pareto_outcomes = sorted(combined_pareto, key=lambda x: x[0][0], reverse=True)
 
@@ -249,10 +262,13 @@ class Group1(SAONegotiator):
             The phase as an Integer.
         """
         if state.step < (self.nmi.n_steps * 0.8):
+            # 80% of the negotiation time is phase 1
             self.phase = 1
         elif state.step < (self.nmi.n_steps * 0.925):
+            # 12.5% of the negotiation time is phase 2
             self.phase = 2
         else:
+            # 7.75% of the negotiation time is phase 3
             self.phase = 3
 
     def compute_concession(self, state: SAOState):
@@ -269,6 +285,7 @@ class Group1(SAONegotiator):
         M = self.pareto_outcomes[0][0][0]
 
         if self.phase == 1:
+            # beta value in phase 1
             beta = 6
         elif self.phase == 2 and self.opponent_ends:
             beta = 3.5
@@ -286,7 +303,7 @@ class Group1(SAONegotiator):
         This is one of the functions you need to implement.
         It should determine whether to accept the offer.
 
-        Args:
+        Parameters:
             state (SAOState): the `SAOState` containing the offer from your partner (None if you are just starting the negotiation)
                    and other information about the negotiation (e.g. current step, relative time, etc.).
 
@@ -297,7 +314,6 @@ class Group1(SAONegotiator):
         offer = state.current_offer
         offer_utility = float(self.ufun(offer))
 
-        # define two strategies for when opponent has and does not have last bid
         if offer is None:
             return False
         
@@ -307,6 +323,7 @@ class Group1(SAONegotiator):
             if self.differences_bidded_by_opp[0][-1] > acceptable_utility_difference[int(self.opponent_ends)] and offer_utility >= self.concession_threshold:
                 return True
 
+        # Accept only offers above the concession threshold
         if offer_utility >= self.concession_threshold:
             return True
         return False
@@ -329,19 +346,23 @@ class Group1(SAONegotiator):
         Returns: The counteroffer as Outcome.
         """
         concession_bids = []
+        
+        # If we have the final bid, in the last phase of the negotiation, we will bid slightly above the opponent's reservation estimate
         if self.phase == 3 and not self.opponent_ends:
             #print(f"(Opp ends{self.opponent_ends}) Last phase reached at {state.step} with opp RV estimate: {self.opponent_reserved_value}")
             concession_bids = [bids for bids in self.pareto_outcomes if bids[0][0] > self.concession_threshold and bids[0][1] > (1.25 * self.opponent_reserved_value)]
 
+        # in the first 2 phases, or in the last phase when the opponent has the final bid, we bid above our threshold
         if len(concession_bids) == 0:
-            # compute all possible bids given the criteria for 'good' bids
             concession_bids = [bids for bids in self.pareto_outcomes if bids[0][0] > self.concession_threshold]
 
         if len(concession_bids) == 0:
+            # if no bids are found, we will bid the highest utility bid
             bid_idx = max(range(len(self.rational_outcomes)), key=lambda x: self.ufun(self.rational_outcomes[x]))
         else:
+            # if bids are found, we will bid the bid with the highest utility for the opponent
             bid_idx = max(concession_bids, key=lambda x: x[0][1])[1]
-            
+
         return self.rational_outcomes[bid_idx]
 
     def update_differences(self, 
@@ -349,8 +370,18 @@ class Group1(SAONegotiator):
                            utility_history: list[float], 
                            max_order: int | None = None
                            ) -> None:
+        
         """
         Update the differences until order max_order from the given utility history.
+
+        Parameters:
+        - differences (list[list[float]]): A list of lists to store the differences.
+        - utility_history (list[float]): A list of utility values representing the history.
+        - max_order (int | None): The maximum order of differences to compute. If None, all differences will be computed.
+        
+        Returns:
+        - None
+
         """
         if self.debug: assert len(utility_history) > 1
         
@@ -369,30 +400,64 @@ class Group1(SAONegotiator):
                     differences[k].append(differences[k-1][-1]-differences[k-1][-2])
 
     def sign_subcriterion(self, positive_differences, negative_differences) -> float:
+        """
+        Calculates the sign subcriterion value based on the given positive and negative differences.
+
+        Parameters:
+        positive_differences (list): A list of positive differences.
+        negative_differences (list): A list of negative differences.
+
+        Returns:
+        float: The sign subcriterion value.
+
+        """
         pos_sum = np.sum(positive_differences)
         neg_sum = np.sum(negative_differences)
-        if len(positive_differences)>0 and len(negative_differences)>0:
-            return abs((pos_sum/len(positive_differences))+(neg_sum/len(negative_differences))) / max([abs(pos_sum/len(positive_differences)), abs(neg_sum/len(negative_differences))])
-        elif len(positive_differences) == 0 and len(negative_differences)==0:
+        if len(positive_differences) > 0 and len(negative_differences) > 0:
+            return abs((pos_sum / len(positive_differences)) + (neg_sum / len(negative_differences))) / max(
+                [abs(pos_sum / len(positive_differences)), abs(neg_sum / len(negative_differences))])
+        elif len(positive_differences) == 0 and len(negative_differences) == 0:
             return 0
         else:
             return 1
         
     def compute_time_criterion(self, differences: list[list[float]]) -> float:
-        if self.debug: assert len(differences) > 1
+        """
+        Computes the time criterion based on the given differences.
+
+        Args:
+            differences (list[list[float]]): A list of lists containing the differences.
+
+        Returns:
+            float: The computed time criterion.
+        """
+        if self.debug:
+            assert len(differences) > 1
+
         D = np.empty(len(differences))
         sum_differences = list()
+
         for k in range(len(differences)):
             positive_differences = np.array(differences[k])[np.greater(differences[k], np.zeros(len(differences[k])))]
             negative_differences = np.array(differences[k])[np.less(differences[k], np.zeros(len(differences[k])))]
             sum_differences.append({"pos": np.sum(positive_differences), "neg": np.sum(negative_differences)})
             D[k] = self.sign_subcriterion(positive_differences, negative_differences)
+
         max_sum_differences = [max([sum_differences[k]["pos"], sum_differences[k]["neg"]]) for k in range(len(differences))]
-        w = np.array([max_sum_differences[k]/np.sum(max_sum_differences) if np.sum(max_sum_differences)>0 else 0 for k in range(len(differences))])
-        if self.debug: assert len(D) == len(D[np.invert(np.isnan(D))])
+        w = np.array([max_sum_differences[k] / np.sum(max_sum_differences) if np.sum(max_sum_differences) > 0 else 0 for k in range(len(differences))])
+
+        if self.debug:
+            assert len(D) == len(D[np.invert(np.isnan(D))])
+
         return np.dot(w[np.invert(np.isnan(D))], D[np.invert(np.isnan(D))])
     
     def compute_behaviour_criterion(self) -> float:
+        """
+        Computes the behaviour criterion for the agent.
+
+        Returns:
+            float: The computed behaviour criterion value.
+        """
         m = min([len(self.differences_bidded_by_self[0]), len(self.opponent_differences_bidded_by_opp[0])])
         if self.debug: assert len(self.opponent_differences_bidded_by_opp[0]) == len(self.differences_bidded_by_self[0]) or len(self.opponent_differences_bidded_by_opp[0]) == len(self.differences_bidded_by_self[0])+1
         r_i =  [self.opponent_differences_bidded_by_opp[0][-m:][i]/self.differences_bidded_by_self[0][-m:][i] if not math.isclose(self.differences_bidded_by_self[0][-m:][i], 0) else 0 for i in range(m)]
