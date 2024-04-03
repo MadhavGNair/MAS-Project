@@ -54,8 +54,8 @@ def run_a_tournament(
     )
     if small:
         anl2024_tournament(
-            competitors=tuple([TestedNegotiator] + list(DEFAULT_AN2024_COMPETITORS) ),
-            n_scenarios=10,
+            competitors=tuple([TestedNegotiator, Boulware]),
+            n_scenarios=3,
             n_outcomes=n_outcomes,
             n_repetitions=1,
             njobs=-1 if debug else 0,
@@ -72,8 +72,10 @@ def run_a_tournament(
             n_repetitions=1,
             njobs=-1 if debug else 0,
             verbosity=2 if debug else 1,
-            plot_fraction=.5,
+            plot_fraction=1,
             name=name,
+            scenario_generator="mix"
+
         ).final_scores
     print(f"Finished in {humanize_time(time.perf_counter() - start)}")
     if name is not None:

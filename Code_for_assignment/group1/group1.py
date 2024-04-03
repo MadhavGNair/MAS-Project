@@ -35,6 +35,7 @@ class Group1(SAONegotiator):
     differences_bidded_by_opp: list[list[float]] 
     debug: bool = False
 
+    deactivate_opponent_modelling: bool = False
     verbosity_opponent_modelling: int = 0
     opponent_reserved_value: int
     opp_model_started: bool  
@@ -192,29 +193,30 @@ class Group1(SAONegotiator):
             else:
                 self.opponent_utility_history_bidded_by_opp.append(self.opponent_ufun(offer))
             self.utility_history_bidded_by_opp.append(self.ufun(offer))
-        if len(self.opponent_utility_history_bidded_by_opp) > 1:
-            self.update_differences(differences=self.opponent_differences_bidded_by_opp, 
-                                    utility_history=self.opponent_utility_history_bidded_by_opp)
-            self.update_differences(differences=self.differences_bidded_by_opp, 
-                                    utility_history=self.utility_history_bidded_by_opp,
-                                    max_order=2)
 
-        # Compute time-dependency criterion
-        if len(self.opponent_differences_bidded_by_opp) > 1:
-            time_criterion = self.compute_time_criterion(differences=self.opponent_differences_bidded_by_opp)
-            if self.verbosity_opponent_modelling > 3:
-                print(f"(opp ends={self.opponent_ends}) Step {state.step} (Rel t = {state.relative_time}): \
-                       Behaviour criterion = {self.compute_behaviour_criterion()}, Time criterion = {time_criterion}")
-            # Start the opponent modelling when the time-dependency criterion is satisfied and opponent has proposed at least 3 different bids.
-            if not self.opp_model_started:
-                if time_criterion > 0.5 and len(np.unique(self.opponent_utility_history_bidded_by_opp)) > 2:
-                    self.opp_model_first_step = state.step
-                    self.opp_model_started = True
-                    if self.verbosity_opponent_modelling > 0:
-                        print(f"(Opponent ends={self.opponent_ends}) Opponent modelling started in step {state.step} \
-                                (Rel time = {state.relative_time}) with time criterion {time_criterion}")
-        if self.opp_model_started:
-            self.update_partner_reserved_value(state)
+        if not self.deactivate_opponent_modelling:
+            if len(self.opponent_utility_history_bidded_by_opp) > 1:
+                self.update_differences(differences=self.opponent_differences_bidded_by_opp, 
+                                        utility_history=self.opponent_utility_history_bidded_by_opp)
+                self.update_differences(differences=self.differences_bidded_by_opp, 
+                                        utility_history=self.utility_history_bidded_by_opp,
+                                        max_order=2)
+            # Compute time-dependency criterion
+            if len(self.opponent_differences_bidded_by_opp) > 1:
+                time_criterion = self.compute_time_criterion(differences=self.opponent_differences_bidded_by_opp)
+                if self.verbosity_opponent_modelling > 3:
+                    print(f"(opp ends={self.opponent_ends}) Step {state.step} (Rel t = {state.relative_time}): \
+                        Behaviour criterion = {self.compute_behaviour_criterion()}, Time criterion = {time_criterion}")
+                # Start the opponent modelling when the time-dependency criterion is satisfied and opponent has proposed at least 3 different bids.
+                if not self.opp_model_started:
+                    if time_criterion > 0.5 and len(np.unique(self.opponent_utility_history_bidded_by_opp)) > 2:
+                        self.opp_model_first_step = state.step
+                        self.opp_model_started = True
+                        if self.verbosity_opponent_modelling > 0:
+                            print(f"(Opponent ends={self.opponent_ends}) Opponent modelling started in step {state.step} \
+                                    (Rel time = {state.relative_time}) with time criterion {time_criterion}")
+            if self.opp_model_started:
+                self.update_partner_reserved_value(state)
 
         # if there are no outcomes (should in theory never happen)
         if self.ufun is None:
@@ -264,19 +266,20 @@ class Group1(SAONegotiator):
         m = self.ufun.reserved_value
         T = self.nmi.n_steps
         t = state.step
+        M = self.pareto_outcomes[0][0][0]
 
         if self.phase == 1:
             beta = 6
         elif self.phase == 2 and self.opponent_ends:
-            beta = 3
-        elif self.phase == 2 or not self.opponent_ends:
+            beta = 3.5
+        elif self.phase == 2 and not self.opponent_ends:
             beta = 4.5
         elif self.phase == 3 and self.opponent_ends:
-            beta = 0.5
-        else:
             beta = 1
+        else:
+            beta = 1.5
             
-        self.concession_threshold = 1 - ((1 - m) * pow(t/T, beta))
+        self.concession_threshold = M - ((M - m) * pow(t/T,  beta))
 
     def acceptance_strategy(self, state: SAOState) -> bool:
         """
@@ -321,12 +324,13 @@ class Group1(SAONegotiator):
 
         Args:
             state (SAOState): the `SAOState` containing the offer from your partner (None if you are just starting the negotiation)
-                   and other information about the negotiation (e.g. current step, relative time, etc.).
+                   and other information about the negotiation (e.g. current step, relative time, etc.).    
 
         Returns: The counteroffer as Outcome.
         """
         concession_bids = []
         if self.phase == 3 and not self.opponent_ends:
+            #print(f"(Opp ends{self.opponent_ends}) Last phase reached at {state.step} with opp RV estimate: {self.opponent_reserved_value}")
             concession_bids = [bids for bids in self.pareto_outcomes if bids[0][0] > self.concession_threshold and bids[0][1] > (1.25 * self.opponent_reserved_value)]
 
         if len(concession_bids) == 0:
@@ -542,4 +546,4 @@ class Group1(SAONegotiator):
 if __name__ == "__main__":
     from helpers.runner import run_a_tournament
 
-    run_a_tournament(Group1, small=True, debug=False)
+    run_a_tournament(Group1, small=False, debug=False)

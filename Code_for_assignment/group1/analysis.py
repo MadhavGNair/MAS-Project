@@ -1,11 +1,12 @@
 import os
 import json
 import csv
+from pathlib import Path
 import matplotlib.pyplot as plt
 
 # Define the folder containing JSON files
-folder_path = '/home/carricossauro/negmas/anl2024/tournaments/2nd/results'
-plot_path = '/home/carricossauro/uu/MAS/MAS-Project/Code_for_assignment/group1/plots'
+folder_path = Path('C:/Users/alexo/negmas/anl2024/tournaments/testGroup120240403H002657941815sXeqYpRJ/results')
+plot_path = 'C:/Users/alexo/Desktop/plots'
 
 results = {'Group1': {'agreements': 0,
                       'timeouts': 0,
