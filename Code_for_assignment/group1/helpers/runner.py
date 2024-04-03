@@ -67,7 +67,7 @@ def run_a_tournament(
     else:
         anl2024_tournament(
             competitors=tuple([TestedNegotiator] + list(DEFAULT_AN2024_COMPETITORS)),
-            n_scenarios=10,
+            n_scenarios=5,
             n_outcomes=n_outcomes,
             n_repetitions=1,
             njobs=-1 if debug else 0,
